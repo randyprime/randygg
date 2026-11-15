@@ -1,0 +1,224 @@
+/* randy.gg: the link page as it has always been, its card his newest post, and the gallery of all of them. */
+
+:root {
+  color-scheme: dark;
+  --ash: #a8afb7;
+  --frost: #aec7d9;
+}
+
+*, ::before, ::after { box-sizing: border-box; border: 0 solid; }
+html { min-height: 100%; line-height: 1.5; -webkit-text-size-adjust: 100%; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+h1, h2, p, ul, ol { margin: 0; }
+a { color: inherit; text-decoration: inherit; }
+img, svg { display: block; max-width: 100%; }
+[hidden] { display: none; }
+
+body {
+  min-height: 100vh;
+  min-height: 100svh;
+  margin: 0;
+  color: #e9ecef;
+  /* the live gradient, one screen tall over the landing; the gallery below sits on its last colour */
+  background:
+    linear-gradient(transparent 72%, #0b0d10),
+    radial-gradient(ellipse 72% 44% at 50% -8%, rgba(64, 87, 108, 0.12), transparent 76%),
+    radial-gradient(ellipse 56% 42% at 92% 82%, rgba(40, 56, 73, 0.07), transparent 80%),
+    linear-gradient(160deg, #0d0f12 0%, #101317 48%, #0b0d10 100%) #0b0d10;
+  background-repeat: no-repeat;
+  background-size: 100% 100vh;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* ------------------------------------------------------------ the landing: the link page, as it is live, one screen */
+
+.landing {
+  width: min(100%, 760px);
+  min-height: 100vh;
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hero { text-align: center; }
+
+.profile-photo {
+  display: block;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto;
+  border: 2px solid rgba(199, 210, 218, 0.6);
+  border-radius: 3px;
+  object-fit: cover;
+  box-shadow: 0 0 0 6px rgba(142, 156, 167, 0.06), 0 15px 45px rgba(0, 0, 0, 0.3);
+}
+
+.wordmark {
+  margin: 18px auto 0;
+  padding: 0.215em 0;
+  color: #edf0f3;
+  font-size: clamp(3.4rem, 12vw, 4.4rem);
+}
+.wordmark svg { height: 0.67em; width: auto; margin: 0 auto; }
+
+.bio {
+  max-width: 490px;
+  margin: 10px auto 0;
+  color: var(--ash);
+  font-size: clamp(0.95rem, 2.4vw, 1.05rem);
+  line-height: 1.65;
+  text-wrap: balance;
+}
+
+.social-links {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.social-link {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  color: #cbd3da;
+  background: rgba(31, 36, 43, 0.7);
+  border: 1px solid rgba(155, 166, 179, 0.2);
+  border-radius: 3px;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
+  transition: color 180ms ease, background 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+.social-link:hover, .social-link:focus-visible {
+  color: #fff;
+  background: rgba(43, 53, 65, 0.9);
+  border-color: rgba(171, 191, 208, 0.5);
+  transform: translateY(-2px);
+}
+.social-link svg { width: 22px; height: 22px; }
+
+.capsule-link {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow: hidden;
+  background: rgba(29, 35, 42, 0.68);
+  border: 1px solid rgba(153, 168, 181, 0.25);
+  border-radius: 4px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28), 0 0 50px rgba(85, 107, 126, 0.04);
+  transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+.capsule-link:hover, .capsule-link:focus-visible {
+  border-color: rgba(179, 202, 218, 0.6);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.38), 0 0 55px rgba(105, 136, 159, 0.09);
+  transform: translateY(-3px);
+}
+.capsule-link:focus-visible, .social-link:focus-visible { outline: 2px solid var(--frost); outline-offset: 4px; }
+
+.capsule-image { width: 100%; height: auto; aspect-ratio: 1232 / 706; object-fit: cover; }
+
+.capsule-cta {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 15px 18px;
+  color: #e9eef2;
+  background: linear-gradient(110deg, #232c35, #1b222a);
+  border-top: 1px solid rgba(153, 168, 181, 0.2);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  flex: 1;
+}
+.capsule-cta svg { width: 23px; height: 23px; flex-shrink: 0; }
+.cta-text { display: flex; flex: 1; flex-direction: column; gap: 1px; min-width: 0; text-wrap: balance; }
+.when { color: var(--ash); font-size: 0.9em; font-weight: 400; letter-spacing: 0; }
+.capsule-link:hover .capsule-cta, .capsule-link:focus-visible .capsule-cta { background: linear-gradient(110deg, #303e4a, #252f39); }
+
+/* ------------------------------------------------------------ the newest post, the one key thing on the screen */
+
+.latest { position: relative; width: min(100%, 440px); margin: 28px auto 0; }
+
+/* the ways down to the gallery and back up: small, never competing with a card */
+.show-more, .to-top { padding: 4px 10px; color: #7d858e; font-size: 0.875rem; white-space: nowrap; transition: color 180ms ease; }
+.show-more:focus-visible, .to-top:focus-visible { color: #e9eef2; }
+@media (hover: hover) { .show-more:hover, .to-top:hover { color: #e9eef2; } } /* no hover stuck on after a tap */
+.show-more:focus-visible, .to-top:focus-visible { outline: 2px solid var(--frost); outline-offset: 2px; }
+/* out of the layout, so the card centres on the profile as live */
+.show-more { position: absolute; top: calc(100% + 12px); left: 50%; transform: translateX(-50%); }
+
+/* ------------------------------------------------------------ the gallery: below the fold, every post as that card */
+
+/* a screen of its own, so Show more brings it to the top; centred like the landing until there are enough to fill it */
+.gallery {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: min(100%, 1080px);
+  min-height: 100vh;
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: 64px 32px;
+}
+.gallery h2 { margin-bottom: 28px; color: var(--ash); font-size: 0.95rem; font-weight: 600; letter-spacing: 0.01em; text-align: center; }
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 320px));
+  justify-content: center;
+  gap: 32px 24px;
+  width: 100%;
+  padding: 0;
+  list-style: none;
+}
+.gallery-grid li { display: flex; }
+.to-top { margin-top: 28px; }
+.gallery .capsule-cta { font-size: 0.9rem; padding: 15px; gap: 10px; }
+
+@media (max-width: 480px) {
+  .landing { padding: 28px 20px; }
+  .gallery { padding: 48px 20px; }
+  .gallery-grid { grid-template-columns: 1fr; }
+  .capsule-cta { padding: 14px 16px; gap: 10px; font-size: 0.85rem; }
+}
+
+@media (max-height: 800px) {
+  .landing { padding-top: 12px; padding-bottom: 12px; }
+  .profile-photo { width: 80px; height: 80px; }
+  .wordmark { margin-top: 14px; font-size: 3.6rem; }
+  .bio { margin-top: 8px; font-size: 0.95rem; line-height: 1.5; }
+  .social-links { margin-top: 16px; }
+  .social-link { width: 44px; height: 44px; }
+  .latest { width: min(100%, 380px); margin-top: 20px; }
+}
+
+@media (min-width: 900px), (min-width: 700px) and (orientation: landscape) {
+  .landing { width: min(100%, 1080px); padding: 32px; }
+  .home-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    align-items: center;
+    gap: clamp(32px, 5vw, 64px);
+  }
+  .profile-panel { min-width: 0; }
+  .latest { width: 100%; max-width: 460px; margin: 0; justify-self: center; }
+  .bio { max-width: 360px; }
+  .capsule-cta { font-size: 0.9rem; padding: 15px; gap: 10px; }
+}
+
+@media (min-width: 700px) and (max-width: 899px) and (orientation: landscape) {
+  .landing { padding: 20px 24px; }
+  .home-layout { gap: 28px; }
+  .capsule-cta { font-size: 0.8rem; padding: 12px; gap: 8px; }
+  .capsule-cta svg { width: 19px; height: 19px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .social-link, .capsule-link, .show-more, .to-top { transition: none; }
+  .social-link:hover, .social-link:focus-visible, .capsule-link:hover, .capsule-link:focus-visible { transform: none; }
+}
