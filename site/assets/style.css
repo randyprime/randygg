@@ -158,7 +158,7 @@ body {
   align-items: center;
   width: min(100%, 1080px);
   margin: 0 auto;
-  padding: 36px 32px 64px;
+  padding: 72px 32px 64px;
 }
 .gallery .type-bar { margin-bottom: 28px; }
 /* the type on: the social links' chip. All is on until a type is the page's target. */
@@ -262,7 +262,7 @@ body {
 
 @media (max-width: 480px) {
   .landing { padding: 40px 20px 0; }
-  .gallery { padding: 28px 20px 48px; }
+  .gallery { padding: 48px 20px 48px; }
   .stage img { max-width: calc(100vw - 24px); }
   /* the title gets its own row, the controls under it */
   .viewer-bar { flex-wrap: wrap; gap: 10px; }
