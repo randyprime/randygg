@@ -1,4 +1,4 @@
-// Screenshots pages headlessly: node tools/shoot.mjs <outdir> <name>=<url>[|<css selector to scroll to>] ...
+// Screenshots pages headlessly: node tools/shoot.mjs <outdir> <name>=<url>[|<selector to scroll to>[|<selectors to click, comma-separated>]] ...
 // Each page is shot at desktop (1440) and phone (390, 3x) widths, full page.
 // Run it under `xvfb-run -a nice -n 10` so nothing touches a real display.
 import { createRequire } from 'node:module';
@@ -29,7 +29,7 @@ try {
     for (const pair of pairs) {
       const i = pair.indexOf('=');
       const name = pair.slice(0, i);
-      const [url, selector] = pair.slice(i + 1).split('|');
+      const [url, selector, clicks] = pair.slice(i + 1).split('|');
       const page = await ctx.newPage();
       page.on('pageerror', e => console.error(`[${name}] page error: ${e.message}`));
       await page.goto(url, { waitUntil: 'networkidle' });
@@ -38,6 +38,7 @@ try {
         const el = document.querySelector(sel);
         window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 120);
       }, selector);
+      for (const click of clicks ? clicks.split(',') : []) { await page.click(click); await page.waitForTimeout(1200); }
       await page.waitForTimeout(400);
       const file = path.join(outdir, `${name}-${size}.png`);
       await page.screenshot({ path: file, fullPage: full });

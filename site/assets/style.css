@@ -104,6 +104,11 @@ body {
 
 .capsule-link {
   display: flex;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
   flex-direction: column;
   width: 100%;
   overflow: hidden;
@@ -196,10 +201,93 @@ body {
 .to-top { margin-top: 28px; }
 .gallery .capsule-cta { font-size: 0.9rem; padding: 15px; gap: 10px; }
 
+/* ------------------------------------------------------------ the viewer: a hosted piece, fullscreen on dark */
+
+/* the popover's own box is just the piece and its bar, so a click on the dark around it closes it */
+.viewer { max-width: none; max-height: none; margin: auto; padding: 0; overflow: visible; color: #e9eef2; background: none; border: 0; }
+.viewer::backdrop { background: rgba(6, 7, 9, 0.94); }
+.viewer:popover-open {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(153, 168, 181, 0.25);
+  border-radius: 4px;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5);
+}
+/* the image sets the frame; the timelapse plays over it in the same box */
+.stage { position: relative; background: #0b0d10; border-radius: 4px 4px 0 0; overflow: hidden; }
+.stage img { width: auto; height: auto; max-width: min(calc(100vw - 48px), 1760px); max-height: calc(100svh - 120px); }
+.stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #0b0d10; display: none; }
+.stage[data-view="timelapse"] img { visibility: hidden; }
+.stage[data-view="timelapse"] video { display: block; }
+
+/* the card's bar, as wide as the piece */
+.viewer-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 0;
+  min-width: 100%;
+  padding: 12px 14px;
+  background: linear-gradient(110deg, #232c35, #1b222a);
+  border-top: 1px solid rgba(153, 168, 181, 0.2);
+  border-radius: 0 0 4px 4px;
+  font-size: 0.9rem;
+}
+.viewer-bar > svg { width: 21px; height: 21px; flex-shrink: 0; }
+.viewer-title { flex: 1; min-width: 0; font-weight: 600; letter-spacing: 0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* the quiet controls: the type bar's chip, on */
+.views { display: flex; gap: 2px; }
+.views button, .download, .play {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  color: #7d858e;
+  font: inherit;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  background: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+.views [aria-pressed="true"], .download, .play {
+  color: #e9eef2;
+  background: rgba(31, 36, 43, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(155, 166, 179, 0.2), inset 0 1px rgba(255, 255, 255, 0.04);
+}
+@media (hover: hover) {
+  .views button:hover { color: #e9eef2; }
+  .download:hover, .play:hover { background: rgba(43, 53, 65, 0.9); box-shadow: inset 0 0 0 1px rgba(171, 191, 208, 0.5); }
+}
+.views button:focus-visible, .download:focus-visible, .play:focus-visible, .scrub:focus-visible { outline: 2px solid var(--frost); outline-offset: 2px; }
+.download svg { width: 16px; height: 16px; }
+.stage[data-view="timelapse"] ~ .viewer-bar .download { visibility: hidden; }
+
+/* a track's player: play, the title over its scrub, the clock */
+.play { padding: 0; width: 36px; height: 36px; justify-content: center; flex-shrink: 0; }
+.play svg { width: 20px; height: 20px; }
+.play svg + svg, .viewer.playing .play svg:first-child { display: none; }
+.viewer.playing .play svg + svg { display: block; }
+.track { display: flex; flex: 1; flex-direction: column; gap: 6px; min-width: 0; }
+.clock { color: var(--ash); font-size: 0.8125rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.scrub { --p: 0%; width: 100%; height: 14px; margin: 0; background: none; appearance: none; cursor: pointer; }
+.scrub::-webkit-slider-runnable-track { height: 2px; background: linear-gradient(90deg, var(--frost) var(--p), rgba(155, 166, 179, 0.25) var(--p)); }
+.scrub::-moz-range-track { height: 2px; background: linear-gradient(90deg, var(--frost) var(--p), rgba(155, 166, 179, 0.25) var(--p)); }
+.scrub::-webkit-slider-thumb { appearance: none; width: 10px; height: 10px; margin-top: -4px; background: #e9eef2; border: 0; border-radius: 50%; }
+.scrub::-moz-range-thumb { width: 10px; height: 10px; background: #e9eef2; border: 0; border-radius: 50%; }
+
 @media (max-width: 480px) {
   .landing { padding: 28px 20px; }
   .gallery { padding: 48px 20px; }
   .gallery .type-bar span { scroll-margin-top: 48px; }
+  .stage img { max-width: calc(100vw - 24px); }
+  /* the title gets its own row, the controls under it */
+  .viewer-bar { flex-wrap: wrap; gap: 10px; }
+  .viewer-bar > .viewer-title { flex-basis: calc(100% - 31px); }
+  .track { flex-basis: calc(100% - 46px); }
+  .download { margin-left: auto; }
   .gallery-grid { grid-template-columns: 1fr; }
   .capsule-cta { padding: 14px 16px; gap: 10px; font-size: 0.85rem; }
 }
@@ -236,6 +324,6 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .social-link, .capsule-link, .type-bar a, .to-top { transition: none; }
+  .social-link, .capsule-link, .type-bar a, .to-top, .views button, .download, .play { transition: none; }
   .social-link:hover, .social-link:focus-visible, .capsule-link:hover, .capsule-link:focus-visible { transform: none; }
 }
