@@ -1,6 +1,6 @@
 /* randy.gg: the link page's header, centred, and under it the gallery of every post by type; a post with words has a
    page of its own. The look is Horizon: the header a dawn sky, the posts the land, the type bar sitting on the horizon,
-   a warm glow along that line. The sky's top stays a neutral black (Nov 16 2026: "don't like that top blue gradient"). */
+   a warm glow along that line. */
 
 @font-face { font-family: "Literata"; src: url("fonts/literata-roman.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
 @font-face { font-family: "Literata"; src: url("fonts/literata-italic.woff2") format("woff2"); font-weight: 400 700; font-style: italic; font-display: swap; }
@@ -37,7 +37,7 @@ body {
   background:
     radial-gradient(ellipse 44% 34% at 50% 100%, rgba(var(--ember), 0.34), rgba(214, 118, 96, 0.1) 55%, transparent 80%),
     radial-gradient(ellipse 95% 62% at 50% 100%, rgba(104, 86, 150, 0.24), transparent 75%),
-    linear-gradient(#08090a 0%, #0c0c0e 42%, #16141b 76%, #201d31 100%);
+    linear-gradient(#05070c 0%, #0a0f1e 42%, #131a31 76%, #201d31 100%);
 }
 
 .hero { text-align: center; }
@@ -250,8 +250,8 @@ body {
 
 /* ------------------------------------------------------------ a track: its cover, and its player, the whole screen */
 
-/* the night sky dawning, from the track's own numbers (build.mjs's sky): its sun low on the horizon, the top a neutral
-   black, grain.
+/* the night sky dawning, from the track's own numbers (build.mjs's sky): its sun low on the horizon, grain, and no glow
+   near the logo (Nov 16 2026: "the art post near the logo, undo dat").
    --drift moves the sun while it plays. */
 @property --drift { syntax: "<percentage>"; inherits: true; initial-value: 0%; }
 .cover {
@@ -263,7 +263,7 @@ body {
   background:
     radial-gradient(ellipse 58% 46% at calc(var(--sun) + var(--drift)) 108%, hsl(var(--dawn) 92% 64% / 0.6), hsl(var(--dawn) 80% 48% / 0.16) 52%, transparent 76%),
     radial-gradient(ellipse 120% 70% at 50% 125%, hsl(var(--depth) 50% 30% / 0.4), transparent 70%),
-    linear-gradient(hsl(var(--night) 6% 4%), hsl(var(--night) 12% 8%) 55%, hsl(calc(var(--night) + 30) 30% 16%)) #0b0d10;
+    linear-gradient(hsl(var(--night) 50% 4%), hsl(var(--night) 42% 9%) 55%, hsl(calc(var(--night) + 30) 30% 16%)) #0b0d10;
 }
 .cover::after { content: ""; position: absolute; inset: 0; z-index: -1; background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); opacity: 0.08; pointer-events: none; }
 .cover-logo { width: 54%; height: auto; filter: drop-shadow(0 0 24px hsl(var(--dawn) 90% 70% / 0.22)); }
