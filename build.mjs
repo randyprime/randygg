@@ -76,7 +76,8 @@ const card = (p, lazy) => {
 };
 
 // A hosted piece, fullscreen on dark (a popover: Esc or a click outside closes it): the image, and under it one bar
-// with the title, a track's player or a piece's timelapse toggle, and the original to download. script.js runs both.
+// with the title, a track's player or a piece's timelapse toggle, and the original to download. Both open playing (a
+// piece with a timelapse opens on it); script.js runs them.
 const slugify = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const clock = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 // a FLAC's length, off its STREAMINFO: total samples over the sample rate
@@ -96,11 +97,12 @@ function viewer(p) {
       <button class="play" type="button" aria-label="Play">${icon('play')}${icon('pause')}</button>
       <span class="track"><span class="viewer-title">${esc(p.title)}</span><input class="scrub" type="range" min="0" max="${track.toFixed(2)}" step="any" value="0" aria-label="Seek"></span>
       <span class="clock"><span class="now">0:00</span> / ${clock(track)}</span>
+      <span class="volume"><button class="mute" type="button" aria-label="Mute">${icon('volume')}${icon('volume-off')}</button><input class="scrub" type="range" min="0" max="1" step="any" value="1" aria-label="Volume"></span>
       <audio src="${attr(p.file.src)}" preload="none"></audio>` : `
       ${icon(p.type)}<span class="viewer-title">${esc(p.title)}</span>${p.timelapse ? `
-      <span class="views"><button type="button" data-view="piece" aria-pressed="true">Piece</button><button type="button" data-view="timelapse" aria-pressed="false">Timelapse</button></span>` : ''}`;
+      <span class="views"><button type="button" data-view="timelapse" aria-pressed="true">Timelapse</button><button type="button" data-view="piece" aria-pressed="false">Piece</button></span>` : ''}`;
   return `  <div class="viewer" id="view-${p.slug}" popover role="dialog" aria-label="${attr(p.title)}">
-    <div class="stage" data-view="piece">
+    <div class="stage" data-view="${p.timelapse ? 'timelapse' : 'piece'}">
       ${stage}
     </div>
     <div class="viewer-bar">${controls}

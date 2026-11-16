@@ -253,6 +253,14 @@ body {
 .play svg + svg, .viewer.playing .play svg:first-child { display: none; }
 .viewer.playing .play svg + svg { display: block; }
 .track { display: flex; flex: 1; flex-direction: column; gap: 6px; min-width: 0; }
+.volume { display: flex; align-items: center; gap: 6px; }
+.volume .scrub { width: 72px; }
+.mute { display: grid; place-items: center; padding: 4px; color: var(--ash); background: none; border-radius: 3px; cursor: pointer; }
+.mute svg { width: 18px; height: 18px; }
+.mute svg + svg, .viewer.muted .mute svg:first-child { display: none; }
+.viewer.muted .mute svg + svg { display: block; }
+@media (hover: hover) { .mute:hover { color: #e9eef2; } }
+.mute:focus-visible { outline: 2px solid var(--frost); outline-offset: 2px; }
 .clock { color: var(--ash); font-size: 0.8125rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .scrub { --p: 0%; width: 100%; height: 14px; margin: 0; background: none; appearance: none; cursor: pointer; }
 .scrub::-webkit-slider-runnable-track { height: 2px; background: linear-gradient(90deg, var(--frost) var(--p), rgba(155, 166, 179, 0.25) var(--p)); }
