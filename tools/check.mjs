@@ -1,6 +1,6 @@
-// Checks a staged or served copy of the site headlessly: the home scrolled to the bottom with nothing opened shows no
-// popover (the track player), and each one opens and shuts again; every post page a card leads to loads clean, and an
-// art post's scrub bar seeks its timelapse. Its clock and zone are pinned (an hour after the newest post, in Da Nang)
+// Checks a staged or served copy of the site headlessly: every post page a card leads to loads clean; an art post's
+// scrub bar seeks its timelapse; a track's page, visited cold (sound held back), waits on its play button with its own
+// title and link preview, and its X goes home; reached from its card, Esc goes back there. Its clock and zone are pinned (an hour after the newest post, in Da Nang)
 // so each card's how-long-ago is checked against the post's published time. Exits 1 on a failure.
 // Usage: xvfb-run -a nice -n 10 node tools/check.mjs <home url>
 import { createRequire } from 'node:module';
@@ -14,9 +14,8 @@ const url = process.argv[2];
 const zone = 'Asia/Ho_Chi_Minh';
 if (!url) { console.error('usage: check.mjs <home url>'); process.exit(2); }
 
-const browser = await chromium.launch({ executablePath: exe, args: ['--mute-audio'] });
+const browser = await chromium.launch({ executablePath: exe, args: ['--mute-audio', '--autoplay-policy=user-gesture-required'] });
 const failures = [];
-const shown = page => page.$$eval('[popover]', views => views.filter(v => v.getClientRects().length).map(v => v.id));
 try {
   for (const viewport of [{ width: 1350, height: 900 }, { width: 390, height: 844 }]) {
     const page = await browser.newPage({ viewport, timezoneId: zone });
@@ -27,16 +26,28 @@ try {
     await page.reload({ waitUntil: 'networkidle' });
     const when = await page.$eval('time.when', t => [t.textContent, t.title]);
     if (when[0] !== '1 hour ago' || when[1].includes('UTC')) failures.push(`${viewport.width}: the newest card, an hour old in ${zone}, says "${when[0]}" (${when[1]})`);
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    for (const id of await shown(page)) failures.push(`${viewport.width}: ${id} shows while shut`);
-    for (const id of await page.$$eval('[popover]', views => views.map(v => v.id))) {
-      await page.click(`.gallery [popovertarget="${id}"]`);
-      if (!(await shown(page)).includes(id)) failures.push(`${viewport.width}: ${id} doesn't open`);
+    const home = new URL(url).pathname;
+    const track = await page.$eval('.gallery a[href^="/posts/"]:has(.cover)', a => a.getAttribute('href')).catch(() => null);
+    if (track) {
+      const before = await page.evaluate(() => history.length);
+      await page.click(`.gallery a[href="${track}"]`);
+      await page.waitForSelector('.player');
       await page.keyboard.press('Escape');
-      if ((await shown(page)).length) failures.push(`${viewport.width}: ${id} doesn't shut`);
+      await page.waitForURL(u => u.pathname === home);
+      if (await page.evaluate(() => history.length) !== before + 1) failures.push(`${viewport.width}: Esc on ${track} from its card doesn't go back`);
     }
     for (const href of await page.$$eval('.gallery a[href^="/posts/"]', as => as.map(a => a.getAttribute('href')))) {
       await page.goto(new URL(href, url).href, { waitUntil: 'networkidle' });
+      if (await page.$('.player')) {
+        const [title, name, image, paused, ready] = await page.evaluate(() => [document.title, document.querySelector('.player').ariaLabel,
+          document.querySelector('meta[property="og:image"]').content, document.querySelector('audio').paused, document.activeElement.matches('.play')]);
+        if (!title.startsWith(name)) failures.push(`${viewport.width}: ${href} is titled "${title}"`);
+        if ((await page.request.get(new URL(new URL(image).pathname, url).href)).status() !== 200) failures.push(`${viewport.width}: ${href}'s link preview ${image} is missing`);
+        if (!paused || !ready) failures.push(`${viewport.width}: ${href} visited cold doesn't wait on its play button`);
+        await page.click('.close');
+        await page.waitForURL(u => u.pathname === home).catch(() => failures.push(`${viewport.width}: ${href}'s X doesn't go home`));
+        continue;
+      }
       if (!(await page.$('.process'))) continue;
       const box = await page.$eval('.scrub', e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
       await page.mouse.click(...box);

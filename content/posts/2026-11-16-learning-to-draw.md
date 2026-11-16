@@ -1,5 +1,5 @@
 ---
-title: “Learning to Draw” – my first masterpiece
+title: Learning to Draw
 published: 2026-11-16T16:21:35Z
 type: art
 file: ../media/art/2026-11-16.png

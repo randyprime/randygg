@@ -238,21 +238,8 @@ body {
 .cover-logo { width: 54%; height: auto; filter: drop-shadow(0 0 24px hsl(var(--dawn) 90% 70% / 0.22)); }
 svg.cover-logo { width: 62%; }
 
-/* the player: the cover edge to edge, the logo, the waveform that scrubs, and the controls under it */
-html:has(.player:popover-open) { overflow: hidden; }
-.player { max-width: none; max-height: none; padding: 0; color: #e9eef2; border: 0; }
-/* shut, nothing of it shows: .cover's display would otherwise beat the browser's own hiding */
-.player:not(:popover-open) { display: none; }
-.player:popover-open {
-  --light: hsl(var(--dawn) 96% 80%);
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  display: grid;
-}
-.player::backdrop { background: #000; }
+/* the player, a track's page: the cover edge to edge, the logo, the waveform that scrubs, and the controls under it */
+.player { --light: hsl(var(--dawn) 96% 80%); position: fixed; inset: 0; color: #e9eef2; }
 .player-body { display: flex; flex-direction: column; align-items: center; width: min(100% - 48px, 860px); padding: 64px 0 48px; }
 .player-logo { width: min(66vw, 500px, 92svh); height: auto; filter: drop-shadow(0 0 48px hsl(var(--dawn) 90% 70% / 0.2)); }
 svg.player-logo { width: min(76vw, 560px); }
@@ -307,11 +294,11 @@ svg.player-logo { width: min(76vw, 560px); }
 /* the one entrance: the logo comes up out of the dark and the waveform rises from its middle; then, while it plays,
    the sun drifts */
 @media (prefers-reduced-motion: no-preference) {
-  .player:popover-open .player-logo { transition: opacity 900ms ease, translate 900ms cubic-bezier(0.2, 0.7, 0.2, 1); }
-  .player:popover-open .wave svg { transition: scale 800ms cubic-bezier(0.2, 0.7, 0.2, 1) 200ms, opacity 500ms ease 200ms; }
+  .player .player-logo { transition: opacity 900ms ease, translate 900ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+  .player .wave svg { transition: scale 800ms cubic-bezier(0.2, 0.7, 0.2, 1) 200ms, opacity 500ms ease 200ms; }
   @starting-style {
-    .player:popover-open .player-logo { opacity: 0; translate: 0 14px; }
-    .player:popover-open .wave svg { scale: 1 0.08; opacity: 0; }
+    .player .player-logo { opacity: 0; translate: 0 14px; }
+    .player .wave svg { scale: 1 0.08; opacity: 0; }
   }
   .player.playing { animation: drift 22s ease-in-out infinite alternate; }
   @keyframes drift { from { --drift: -6%; } to { --drift: 6%; } }

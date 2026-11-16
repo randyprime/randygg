@@ -2,8 +2,7 @@
 // Writes randy.gg: the home, site/index.html (the link page's header, centred, then the type bar and every post as the
 // live card, filterable by type; the first row peeking above the fold is the cue to scroll), a page for each art post
 // and each post with words of its own, and the sitemap.
-// A card goes to the post where it lives (Steam, YouTube), to its page here (art, or words), or for a track opens its
-// player.
+// A card goes to the post where it lives (Steam, YouTube), or to its page here (art, words, or a track's player).
 // No dependencies; the output is committed, so GitHub Pages runs no build. Run `node build.mjs`.
 //
 // content/posts/YYYY-MM-DD-slug.md  front matter only: title, published (when it went live, to the second, with its zone;
@@ -11,7 +10,7 @@
 //                                   a file hosted here (art: the original image, a PNG, and optionally its timelapse;
 //                                   music: the track, a FLAC, with no thumbnail: its cover is made from its logo, a game's
 //                                   own or else the RANDY wordmark, and its waveform from NAME.peaks.json beside it, by
-//                                   tools/encode.sh)
+//                                   tools/encode.sh; its link preview is NAME.cover.jpg beside it, by tools/cover.mjs)
 //                                   A body under the front matter is his words (see markdown below for what it can hold):
 //                                   an art post's writeup, or else a page at /posts/NAME/ with its link the official post,
 //                                   linked at its foot. game and buy (its store page) put "Buy GAME on Steam" up top.
@@ -49,6 +48,7 @@ const mediaFile = (f, rel, what) => {
   return { src: `/assets/media/${inMedia.split(path.sep).join('/')}`, disk: path.join(CONTENT, 'media', inMedia) };
 };
 
+const uncovered = []; // tracks still without a link preview: the build writes the site, then fails on them
 function load() {
   const dir = path.join(CONTENT, 'posts');
   const posts = fs.readdirSync(dir).filter(f => f.endsWith('.md')).sort().map(f => {
@@ -76,12 +76,14 @@ function load() {
     const file = data.file && media('file');
     const peaks = isTrack && file.disk.replace(/\.[^.]+$/, '.peaks.json');
     if (peaks && !fs.existsSync(peaks)) fail(`posts/${f}: no waveform; run tools/encode.sh ${data.file} ${path.basename(peaks)} (paths from content/media)`);
+    const cover = isTrack && file.disk.replace(/\.[^.]+$/, '.cover.jpg');
+    if (cover && !fs.existsSync(cover)) uncovered.push(`posts/${f}: no link preview; with this build served, run tools/cover.mjs <its page's url> content/media/${path.relative(path.join(CONTENT, 'media'), cover)}`);
     const timelapse = isArt && data.timelapse && media('timelapse'), size = isArt && imageSize(file.disk);
     return {
-      ...data, slug: f.slice(0, -3), body, page: (body || isArt) && `/posts/${f.slice(11, -3)}/`, published,
+      ...data, slug: f.slice(0, -3), body, page: (body || isArt || isTrack) && `/posts/${f.slice(11, -3)}/`, published,
       src: data.thumbnail && media('thumbnail').src, file, size,
       timelapse: timelapse && timelapse.src,
-      track: isTrack && { seconds: flacSeconds(file.disk), peaks: JSON.parse(fs.readFileSync(peaks, 'utf8')), logo: data.logo && media('logo').src },
+      track: isTrack && { cover: `/assets/media/${path.relative(path.join(CONTENT, 'media'), cover).split(path.sep).join('/')}`, seconds: flacSeconds(file.disk), peaks: JSON.parse(fs.readFileSync(peaks, 'utf8')), logo: data.logo && media('logo').src },
     };
   });
   if (!posts.length) fail('no posts');
@@ -99,16 +101,15 @@ const ARROW = '<svg class="arrow" viewBox="0 0 24 24" fill="none" aria-hidden="t
 const WORDMARK = fs.readFileSync(path.join(OUT, 'assets', 'randy.svg'), 'utf8').match(/ d="([^"]+)"/)[1];
 
 // The live card, a post per card: its image, then one bar with where it came from (Steam, YouTube, or its type when it's
-// hosted here), its title and how long ago it went out, an arrow. A track's card is a button that opens its player.
+// hosted here), its title and how long ago it went out, an arrow.
 const source = p => p.file ? icon(p.type) : /steampowered|steamcommunity/.test(p.link) ? icon('steam') : /youtube\.com|youtu\.be/.test(p.link) ? icon('youtube') : '';
 const card = (p, lazy) => {
-  const [open, close] = p.track ? [`<button class="capsule-link" type="button" popovertarget="view-${p.slug}">`, '</button>'] : [`<a class="capsule-link" href="${attr(p.page || p.link)}">`, '</a>'];
   const image = p.track ? `<span class="capsule-image cover" style="${sky(p.slug)}">${logo(p, 'cover-logo')}</span>`
     : `<img class="capsule-image" src="${attr(p.src)}" alt=""${lazy ? ' loading="lazy"' : ''}>`;
-  return `${open}
+  return `<a class="capsule-link" href="${attr(p.page || p.link)}">
           ${image}
           <span class="capsule-cta">${source(p)}<span class="cta-text"><span>${esc(p.title)}</span>${when(p, ' class="when"')}</span>${ARROW}</span>
-        ${close}`;
+        </a>`;
 };
 
 // A track's cover, its card's and its player's alike: its logo over a night sky dawning, seeded from its slug so each
@@ -148,14 +149,16 @@ const download = p => {
   const mb = (fs.statSync(p.file.disk).size / 1e6).toFixed(1);
   return `<a class="download" href="${attr(p.file.src)}" download="${p.slug.slice(11)}.${ext}">${icon('download')}${ext.toUpperCase()} · ${mb} MB</a>`;
 };
-// A track's player: the whole screen its cover, the logo, and under it the waveform that is the scrubber (the bars are
-// its loudness, drawn here; script.js lights what has played), then the time, play, volume and the FLAC. It opens
-// playing; the X, Esc, Space, and the arrows are script.js's and the popover's.
-function player(p) {
+// A track's page is its player: the whole screen its cover, the logo, and under it the waveform that is the scrubber
+// (the bars are its loudness, drawn here; script.js lights what has played), then the time, play, volume and the FLAC.
+// The X goes home; it, Esc, Space, the arrows and playing on arrival are script.js's.
+function trackPage(p) {
   const { seconds, peaks } = p.track;
   const bars = peaks.map((v, i) => { const h = Math.max(3, v ** 0.6 * 100); return `M${i * 5} ${((100 - h) / 2).toFixed(1)}h3v${h.toFixed(1)}h-3z`; }).join('');
-  return `  <div class="player cover" id="view-${p.slug}" popover role="dialog" aria-label="${attr(p.title)}" style="${sky(p.slug)}">
-    <button class="close" type="button" popovertarget="view-${p.slug}" popovertargetaction="hide" aria-label="Close">${icon('close')}</button>
+  return `${head({ title: `${p.title} – randy`, url: p.page, image: p.track.cover, alt: p.title, type: 'music.song' })}
+<body>
+<main class="player cover" aria-label="${attr(p.title)}" style="${sky(p.slug)}">
+    <a class="close" href="/" aria-label="Close">${icon('close')}</a>
     <div class="player-body">
       ${logo(p, 'player-logo')}
       <p class="player-title">${esc(p.title)}</p>
@@ -170,8 +173,11 @@ function player(p) {
         ${download(p)}
       </div>
     </div>
-    <audio src="${attr(p.file.src)}" preload="none"></audio>
-  </div>`;
+    <audio src="${attr(p.file.src)}" preload="metadata"></audio>
+</main>
+</body>
+</html>
+`;
 }
 
 // All and the types, each filtering the gallery. Pure CSS: each type's link holds its anchor (a span, so the browser
@@ -234,7 +240,6 @@ ${TYPES.map(t => t.toLowerCase()).filter(t => !posts.some(p => p.type === t)).ma
     </ul>
     <a class="to-top" href="#top">Back to top</a>
   </section>
-${posts.filter(p => p.track).map(player).join('\n')}
 </main>
 </body>
 </html>
@@ -348,7 +353,7 @@ fs.writeFileSync(path.join(OUT, 'index.html'), page(posts));
 fs.rmSync(path.join(OUT, 'posts'), { recursive: true, force: true });
 for (const p of posts.filter(p => p.page)) {
   fs.mkdirSync(path.join(OUT, p.page), { recursive: true });
-  fs.writeFileSync(path.join(OUT, p.page, 'index.html'), (p.type === 'art' ? artPage : postPage)(p));
+  fs.writeFileSync(path.join(OUT, p.page, 'index.html'), (p.track ? trackPage : p.type === 'art' ? artPage : postPage)(p));
 }
 fs.writeFileSync(path.join(OUT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${['/', ...posts.filter(p => p.page).map(p => p.page)].map(u => `<url><loc>${ORIGIN}${u}</loc></url>`).join('')}</urlset>
@@ -356,3 +361,4 @@ fs.writeFileSync(path.join(OUT, 'sitemap.xml'), `<?xml version="1.0" encoding="U
 fs.rmSync(path.join(OUT, 'assets', 'media'), { recursive: true, force: true });
 fs.cpSync(path.join(CONTENT, 'media'), path.join(OUT, 'assets', 'media'), { recursive: true, filter: f => !f.endsWith('.peaks.json') });
 console.log(`build: ${posts.length} posts -> site/index.html, ${posts.filter(p => p.page).length} with a page`);
+if (uncovered.length) fail(uncovered.join('\n'));

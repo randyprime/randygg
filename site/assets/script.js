@@ -11,7 +11,7 @@ const ago = time => {
 };
 
 const clock = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
-// play, quietly when a quick shut cuts it off (the browser rejects that play)
+// play, quietly when the browser refuses it
 const start = media => media.play().catch(() => {});
 
 // An art post's piece and its timelapse. It plays once in the frame and settles on the finished piece; the scrub bar
@@ -68,9 +68,10 @@ function art(process) {
   } else start(video);
 }
 
-// A track's player, the whole screen. It plays on open (the card's click is the gesture that allows sound) and stops on
-// close (the X, or Esc). The waveform is the scrubber: click or drag to seek, the time under the pointer. Space plays and
-// pauses, the left and right arrows seek, up and down set the volume, which is kept for the session.
+// A track's page, its player. It plays on arrival, or where the browser holds sound back (a cold visit) waits on its
+// play button. The X and Esc leave: back to the home when it came from there, else to it. The waveform is the
+// scrubber: click or drag to seek, the time under the pointer. Space plays and pauses, the left and right arrows seek,
+// up and down set the volume, which is kept for the session.
 function player(view) {
   const audio = view.querySelector('audio'), play = view.querySelector('.play'), now = view.querySelector('.now');
   const wave = view.querySelector('.wave'), tip = view.querySelector('.wave-tip');
@@ -86,7 +87,12 @@ function player(view) {
   const toggle = () => (audio.paused ? start(audio) : audio.pause());
   const nudge = v => { audio.muted = false; audio.volume = Math.min(1, Math.max(0, Math.round((audio.volume + v) * 10) / 10)); };
 
-  view.addEventListener('toggle', e => (e.newState === 'open' ? start(audio) : audio.pause()));
+  const leave = () => {
+    const from = document.referrer && new URL(document.referrer);
+    if (from && from.origin === location.origin && from.pathname === '/' && history.length > 1) history.back();
+    else location.assign('/');
+  };
+  view.querySelector('.close').addEventListener('click', e => { e.preventDefault(); leave(); });
   play.addEventListener('click', toggle);
   audio.addEventListener('play', () => { view.classList.add('playing'); play.ariaLabel = 'Pause'; });
   audio.addEventListener('pause', () => { view.classList.remove('playing'); play.ariaLabel = 'Play'; });
@@ -101,9 +107,9 @@ function player(view) {
   wave.addEventListener('pointerdown', e => { wave.setPointerCapture(e.pointerId); seek(at(e)); });
   wave.addEventListener('pointermove', e => { const t = at(e); if (wave.hasPointerCapture(e.pointerId)) seek(t); });
 
-  view.addEventListener('keydown', e => {
+  document.addEventListener('keydown', e => {
     if (e.target === volume && e.key.startsWith('Arrow')) return; // the slider takes its own arrows
-    const act = { ' ': toggle, ArrowLeft: () => seek(audio.currentTime - 5), ArrowRight: () => seek(audio.currentTime + 5),
+    const act = { Escape: leave, ' ': toggle, ArrowLeft: () => seek(audio.currentTime - 5), ArrowRight: () => seek(audio.currentTime + 5),
       ArrowUp: () => nudge(0.1), ArrowDown: () => nudge(-0.1) }[e.key];
     if (!act) return;
     e.preventDefault();
@@ -122,6 +128,7 @@ function player(view) {
   mute.addEventListener('click', () => { audio.muted = !audio.muted; if (!audio.muted && !audio.volume) audio.volume = 1; });
   volume.addEventListener('input', () => { audio.volume = +volume.value; audio.muted = false; });
   sound();
+  audio.play().catch(() => play.focus({ focusVisible: false }));
 }
 
 // A post's margin notes, after Crafting Interpreters' script.js: each <aside data-for="x"> moves level with its
