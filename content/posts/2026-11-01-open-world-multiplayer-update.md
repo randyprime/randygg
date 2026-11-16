@@ -2,6 +2,8 @@
 title: Open World Multiplayer Update (Experimental)
 type: game
 link: https://store.steampowered.com/news/app/3433610/view/1847920302245348
+game: Terrafactor
+buy: https://store.steampowered.com/app/3433610/Terrafactor/
 thumbnail: ../media/steam/open-world-multiplayer.png
 ---
 

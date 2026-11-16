@@ -11,7 +11,8 @@
 //                                   a FLAC, with no thumbnail: its cover is made from its logo, a game's own or else the
 //                                   RANDY wordmark, and its waveform from NAME.peaks.json beside it, by tools/encode.sh)
 //                                   A body under the front matter makes the post a page at /posts/NAME/, its link the
-//                                   official post, shown up top (see markdown below for what the body can hold).
+//                                   official post, linked at its foot (see markdown below for what the body can hold);
+//                                   game and buy (its store page) put "Buy GAME on Steam" up top.
 // content/media/                    the posts' media, copied to site/assets/media/ (waveforms stay: they're baked in)
 //
 // Everything else in site/ is hand-kept.
@@ -61,6 +62,7 @@ function load() {
     for (const key of ['title', 'type', ...(isTrack ? [] : ['thumbnail'])]) if (!data[key]) fail(`posts/${f} needs a ${key}`);
     if (!data.link === !data.file) fail(`posts/${f} needs a link or a file, not both`);
     if (body && !data.link) fail(`posts/${f}: a post with words needs the link to its official post`);
+    if (!data.game !== !data.buy) fail(`posts/${f}: game and buy go together`);
     if (!TYPES.some(t => t.toLowerCase() === data.type)) fail(`posts/${f}: type is one of ${TYPES.join(', ').toLowerCase()}`);
     const media = key => mediaFile(f, data[key], key);
     const file = data.file && media('file');
@@ -279,9 +281,11 @@ function markdown(p) {
   return html;
 }
 
-// A post's own page: its title in the sky, the official post sitting on the horizon, then his words on the land.
+// A post's own page: its title in the sky, its game to buy sitting on the horizon, then his words on the land, and at
+// their foot the official post.
+const site = url => /steampowered|steamcommunity/.test(url) ? ['steam', 'Steam'] : /youtube\.com|youtu\.be/.test(url) ? ['youtube', 'YouTube'] : null;
 function postPage(p) {
-  const where = /steampowered|steamcommunity/.test(p.link) ? ['steam', 'Steam'] : /youtube\.com|youtu\.be/.test(p.link) ? ['youtube', 'YouTube'] : null;
+  const store = p.buy && site(p.buy), where = site(p.link);
   return `${head({ title: `${p.title} – randy`, url: p.page, image: p.src, alt: p.title, type: 'article' })}
 <body>
 <header class="read-sky">
@@ -290,10 +294,11 @@ function postPage(p) {
   <p class="byline"><time datetime="${p.date}">${p.longDate}</time></p>
 </header>
 <main class="read">
-  <a class="official" href="${attr(p.link)}">${where ? `${icon(where[0])}The official post on ${where[1]}` : 'The official post'}${ARROW}</a>
+  ${p.buy ? `<a class="buy" href="${attr(p.buy)}">${store ? icon(store[0]) : ''}Buy ${esc(p.game)}${store ? ` on ${store[1]}` : ''}${ARROW}</a>` : '<span class="buy-none"></span>'}
   <article class="post">
 ${markdown(p)}
   </article>
+  <a class="official" href="${attr(p.link)}">Read the official post${where ? ` on ${where[1]}` : ''}${ARROW}</a>
 </main>
 <footer class="foot"><a href="/">randy.gg</a><a href="mailto:contact@randy.gg">contact@randy.gg</a></footer>
 </body>
