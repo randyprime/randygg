@@ -77,7 +77,32 @@ function player(view) {
   sound();
 }
 
+// A post's margin notes, after Crafting Interpreters' script.js: each <aside data-for="x"> moves level with its
+// <span class="anchor" data-aside="x">, and one that would overlap the note above it slides down instead. Where the
+// margin doesn't fit (style.css's breakpoint) the notes stay after their block.
+function placeAsides(post) {
+  const inline = getComputedStyle(post.querySelector('aside')).position !== 'absolute';
+  const base = post.getBoundingClientRect().top;
+  let floor = -Infinity;
+  for (const aside of post.querySelectorAll('aside[data-for]')) {
+    aside.style.top = '';
+    if (inline) continue;
+    const anchor = post.querySelector(`.anchor[data-aside="${CSS.escape(aside.dataset.for)}"]`);
+    const top = Math.max(anchor.getBoundingClientRect().top - base - 4, floor);
+    aside.style.top = `${top}px`;
+    floor = top + aside.offsetHeight + 16;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   for (const time of document.querySelectorAll('time.when')) time.textContent = ago(time.dateTime);
   for (const view of document.querySelectorAll('.viewer')) (view.classList.contains('player') ? player : viewer)(view);
+  const post = document.querySelector('.post');
+  if (post?.querySelector('aside')) {
+    const place = () => placeAsides(post);
+    addEventListener('resize', place);
+    for (const img of post.querySelectorAll('img')) img.addEventListener('load', place);
+    document.fonts.ready.then(place);
+    place();
+  }
 });
