@@ -2,7 +2,7 @@
 # Builds the site and uploads it to the unlisted Cloudflare Pages preview (randygg-preview.pages.dev).
 # The upload is noindexed (robots Disallow, X-Robots-Tag); site/ itself is untouched.
 # A branch other than main lands on its own alias, https://<branch>.randygg-preview.pages.dev/, to compare variants.
-# While tools/designs/ exists, the upload carries its design switcher. --local stages without uploading.
+# --local stages without uploading.
 # Needs /secrets/cloudflare.env (IP-locked to hetzbox and gpubox). Nices its own build.
 # Usage: tools/preview.sh [branch | --local]
 set -euo pipefail
@@ -18,7 +18,6 @@ cp -r site/. "$STAGE/"
 rm -f "$STAGE/CNAME" "$STAGE/sitemap.xml"
 printf 'User-agent: *\nDisallow: /\n' > "$STAGE/robots.txt"
 printf '/*\n  X-Robots-Tag: noindex, nofollow\n' > "$STAGE/_headers"
-[ -d tools/designs ] && node tools/designs/inject.mjs "$STAGE"
 [ "$BRANCH" = --local ] && { echo "$STAGE"; exit 0; }
 
 set -a; . /secrets/cloudflare.env; set +a
