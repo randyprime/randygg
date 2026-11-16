@@ -1,18 +1,19 @@
 #!/usr/bin/env node
 // Writes randy.gg: the home, site/index.html (the link page's header, centred, then the type bar and every post as the
-// live card, filterable by type; the first row peeking above the fold is the cue to scroll), a page for each post with
-// words of its own, and the sitemap.
-// A card goes to the post where it lives (Steam, YouTube), to its page here when it has words, or, for a piece hosted
-// here, opens it in the viewer.
+// live card, filterable by type; the first row peeking above the fold is the cue to scroll), a page for each art post
+// and each post with words of its own, and the sitemap.
+// A card goes to the post where it lives (Steam, YouTube), to its page here (art, or words), or for a track opens its
+// player.
 // No dependencies; the output is committed, so GitHub Pages runs no build. Run `node build.mjs`.
 //
 // content/posts/YYYY-MM-DD-slug.md  front matter only: title, type (one of TYPES), thumbnail, and either a link out or
-//                                   a file hosted here (art: the original image, a PNG, a timelapse beside it; music: the track,
-//                                   a FLAC, with no thumbnail: its cover is made from its logo, a game's own or else the
-//                                   RANDY wordmark, and its waveform from NAME.peaks.json beside it, by tools/encode.sh)
-//                                   A body under the front matter makes the post a page at /posts/NAME/, its link the
-//                                   official post, linked at its foot (see markdown below for what the body can hold);
-//                                   game and buy (its store page) put "Buy GAME on Steam" up top.
+//                                   a file hosted here (art: the original image, a PNG, and optionally its timelapse, with
+//                                   NAME.strip.webp beside it; music: the track, a FLAC, with no thumbnail: its cover is
+//                                   made from its logo, a game's own or else the RANDY wordmark, and its waveform from
+//                                   NAME.peaks.json beside it; tools/encode.sh makes both)
+//                                   A body under the front matter is his words (see markdown below for what it can hold):
+//                                   an art post's writeup, or else a page at /posts/NAME/ with its link the official post,
+//                                   linked at its foot. game and buy (its store page) put "Buy GAME on Steam" up top.
 // content/media/                    the posts' media, copied to site/assets/media/ (waveforms stay: they're baked in)
 //
 // Everything else in site/ is hand-kept.
@@ -61,17 +62,22 @@ function load() {
     const isTrack = data.type === 'music' && data.file;
     for (const key of ['title', 'type', ...(isTrack ? [] : ['thumbnail'])]) if (!data[key]) fail(`posts/${f} needs a ${key}`);
     if (!data.link === !data.file) fail(`posts/${f} needs a link or a file, not both`);
-    if (body && !data.link) fail(`posts/${f}: a post with words needs the link to its official post`);
+    const isArt = data.type === 'art' && data.file;
+    if (body && !data.link && !isArt) fail(`posts/${f}: a post with words needs the link to its official post`);
     if (!data.game !== !data.buy) fail(`posts/${f}: game and buy go together`);
     if (!TYPES.some(t => t.toLowerCase() === data.type)) fail(`posts/${f}: type is one of ${TYPES.join(', ').toLowerCase()}`);
     const media = key => mediaFile(f, data[key], key);
     const file = data.file && media('file');
     const peaks = isTrack && file.disk.replace(/\.[^.]+$/, '.peaks.json');
     if (peaks && !fs.existsSync(peaks)) fail(`posts/${f}: no waveform; run tools/encode.sh ${data.file} ${path.basename(peaks)} (paths from content/media)`);
+    const timelapse = isArt && data.timelapse && media('timelapse'), size = isArt && imageSize(file.disk);
+    const strip = timelapse && timelapse.disk.replace(/\.[^.]+$/, '.strip.webp');
+    if (strip && !fs.existsSync(strip)) fail(`posts/${f}: no filmstrip; run tools/encode.sh ${data.timelapse} ${path.basename(strip)} (paths from content/media)`);
     return {
-      ...data, slug: f.slice(0, -3), body, page: body && `/posts/${f.slice(11, -3)}/`, date: `${m[1]}-${m[2]}-${m[3]}`, longDate: `${+m[3]} ${MONTHS[m[2] - 1]} ${m[1]}`,
-      src: data.thumbnail && media('thumbnail').src, file, timelapse: data.timelapse && media('timelapse').src,
-      size: file && !isTrack && pngSize(file.disk),
+      ...data, slug: f.slice(0, -3), body, page: (body || isArt) && `/posts/${f.slice(11, -3)}/`, date: `${m[1]}-${m[2]}-${m[3]}`, longDate: `${+m[3]} ${MONTHS[m[2] - 1]} ${m[1]}`,
+      src: data.thumbnail && media('thumbnail').src, file, size,
+      timelapse: timelapse && { src: timelapse.src, strip: mediaFile(f, path.relative(dir, strip), 'filmstrip').src,
+        frames: (([w, h]) => Math.round(w / (h * size[0] / size[1])))(imageSize(strip)) },
       track: isTrack && { seconds: flacSeconds(file.disk), peaks: JSON.parse(fs.readFileSync(peaks, 'utf8')), logo: data.logo && media('logo').src },
     };
   });
@@ -85,10 +91,10 @@ const WORDMARK = fs.readFileSync(path.join(OUT, 'assets', 'randy.svg'), 'utf8').
 
 // The live card, a post per card: its image, then one bar with where it came from (Steam, YouTube, or its type when it's
 // hosted here), its title and when it went out, an arrow. script.js turns the date into how long ago, at view time so the
-// committed page never goes stale. A hosted piece's card is a button that opens its viewer.
+// committed page never goes stale. A track's card is a button that opens its player.
 const source = p => p.file ? icon(p.type) : /steampowered|steamcommunity/.test(p.link) ? icon('steam') : /youtube\.com|youtu\.be/.test(p.link) ? icon('youtube') : '';
 const card = (p, lazy) => {
-  const [open, close] = p.file ? [`<button class="capsule-link" type="button" popovertarget="view-${p.slug}">`, '</button>'] : [`<a class="capsule-link" href="${attr(p.page || p.link)}">`, '</a>'];
+  const [open, close] = p.track ? [`<button class="capsule-link" type="button" popovertarget="view-${p.slug}">`, '</button>'] : [`<a class="capsule-link" href="${attr(p.page || p.link)}">`, '</a>'];
   const image = p.track ? `<span class="capsule-image cover" style="${sky(p.slug)}">${logo(p, 'cover-logo')}</span>`
     : `<img class="capsule-image" src="${attr(p.src)}" alt=""${lazy ? ' loading="lazy"' : ''}>`;
   return `${open}
@@ -116,8 +122,6 @@ const sky = slug => {
 const logo = (p, cls) => p.track.logo ? `<img class="${cls}" src="${attr(p.track.logo)}" alt="">`
   : `<svg class="${cls}" viewBox="0 0 2542.126 509.882" aria-hidden="true"><path fill="url(#sheen)" d="${WORDMARK}"/></svg>`;
 
-// A hosted piece, fullscreen on dark (a popover: Esc or a click outside closes it): its timelapse, playing from the
-// start (script.js), or the image when it has none; under it one bar with the title and the original to download.
 const slugify = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const clock = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 // a FLAC's length, off its STREAMINFO: total samples over the sample rate
@@ -126,37 +130,28 @@ const flacSeconds = disk => {
   if (b.toString('latin1', 0, 4) !== 'fLaC') fail(`${disk}: a track is a FLAC`);
   return ((b[21] & 0x0f) * 2 ** 32 + b.readUInt32BE(22)) / ((b[18] << 12) | (b[19] << 4) | (b[20] >> 4));
 };
-// a PNG's size, off its header, for the viewer's frame before anything loads
-const pngSize = disk => {
-  const b = fs.readFileSync(disk).subarray(0, 24);
-  if (b.readUInt32BE(12) !== 0x49484452) fail(`${disk}: hosted art is a PNG`);
-  return [b.readUInt32BE(16), b.readUInt32BE(20)];
+// a PNG's or a WebP's size, off its header
+const imageSize = disk => {
+  const b = fs.readFileSync(disk).subarray(0, 30);
+  if (b.readUInt32BE(12) === 0x49484452) return [b.readUInt32BE(16), b.readUInt32BE(20)];
+  const kind = b.toString('latin1', 12, 16);
+  if (kind === 'VP8X') return [1 + b.readUIntLE(24, 3), 1 + b.readUIntLE(27, 3)];
+  if (kind === 'VP8L') { const v = b.readUInt32LE(21); return [1 + (v & 0x3fff), 1 + ((v >> 14) & 0x3fff)]; }
+  if (kind === 'VP8 ') return [b.readUInt16LE(26) & 0x3fff, b.readUInt16LE(28) & 0x3fff];
+  fail(`${disk}: not a PNG or a WebP`);
 };
 const download = p => {
   const ext = path.extname(p.file.disk).slice(1);
   const mb = (fs.statSync(p.file.disk).size / 1e6).toFixed(1);
   return `<a class="download" href="${attr(p.file.src)}" download="${slugify(p.title)}.${ext}">${icon('download')}${ext.toUpperCase()} · ${mb} MB</a>`;
 };
-function viewer(p) {
-  return `  <div class="viewer" id="view-${p.slug}" popover role="dialog" aria-label="${attr(p.title)}">
-    <div class="stage">
-      ${p.timelapse ? `<video src="${attr(p.timelapse)}" poster="${attr(p.src)}" width="${p.size[0]}" height="${p.size[1]}" muted playsinline controls preload="none" aria-label="${attr(p.title)}, timelapse"></video>`
-        : `<img src="${attr(p.src)}" width="${p.size[0]}" height="${p.size[1]}" alt="${attr(p.title)}" loading="lazy">`}
-    </div>
-    <div class="viewer-bar">
-      ${icon(p.type)}<span class="viewer-title">${esc(p.title)}</span>
-      ${download(p)}
-    </div>
-  </div>`;
-}
-
 // A track's player: the whole screen its cover, the logo, and under it the waveform that is the scrubber (the bars are
 // its loudness, drawn here; script.js lights what has played), then the time, play, volume and the FLAC. It opens
 // playing; the X, Esc, Space, and the arrows are script.js's and the popover's.
 function player(p) {
   const { seconds, peaks } = p.track;
   const bars = peaks.map((v, i) => { const h = Math.max(3, v ** 0.6 * 100); return `M${i * 5} ${((100 - h) / 2).toFixed(1)}h3v${h.toFixed(1)}h-3z`; }).join('');
-  return `  <div class="viewer player cover" id="view-${p.slug}" popover role="dialog" aria-label="${attr(p.title)}" style="${sky(p.slug)}">
+  return `  <div class="player cover" id="view-${p.slug}" popover role="dialog" aria-label="${attr(p.title)}" style="${sky(p.slug)}">
     <button class="close" type="button" popovertarget="view-${p.slug}" popovertargetaction="hide" aria-label="Close">${icon('close')}</button>
     <div class="player-body">
       ${logo(p, 'player-logo')}
@@ -235,7 +230,7 @@ ${TYPES.map(t => t.toLowerCase()).filter(t => !posts.some(p => p.type === t)).ma
     </ul>
     <a class="to-top" href="#top">Back to top</a>
   </section>
-${posts.filter(p => p.file).map(p => (p.track ? player : viewer)(p)).join('\n')}
+${posts.filter(p => p.track).map(player).join('\n')}
 </main>
 </body>
 </html>
@@ -261,8 +256,8 @@ function markdown(p) {
       return hold(`<span class="anchor" data-aside="${attr(name)}"></span>`);
     });
     t = t.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, alt, rel) => {
-      const img = mediaFile(p.slug + '.md', rel, `image ${rel}`), size = img.disk.endsWith('.png') ? pngSize(img.disk) : null;
-      return hold(`<img src="${attr(img.src)}" alt="${attr(alt)}"${size ? ` width="${size[0]}" height="${size[1]}"` : ''} loading="lazy">`);
+      const img = mediaFile(p.slug + '.md', rel, `image ${rel}`), size = imageSize(img.disk);
+      return hold(`<img src="${attr(img.src)}" alt="${attr(alt)}" width="${size[0]}" height="${size[1]}" loading="lazy">`);
     });
     t = t.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, label, href) => hold(`<a href="${attr(href)}">${inline(label)}</a>`));
     t = esc(t).replace(/\*\*(\S[\s\S]*?)\*\*/g, '<strong>$1</strong>').replace(/\*(\S[\s\S]*?)\*/g, '<em>$1</em>');
@@ -306,12 +301,48 @@ ${markdown(p)}
 `;
 }
 
+// An art post's page: the piece stands in the sky in its frame, its timelapse playing there once and settling on the
+// finished piece; on the horizon sits its process, a filmstrip of the timelapse that scrubs it (script.js); then the
+// title, the original to download, and his writeup on the land.
+function artPage(p) {
+  const t = p.timelapse, still = `<img class="still" src="${attr(p.src)}" alt="${attr(p.title)}" width="${p.size[0]}" height="${p.size[1]}">`;
+  return `${head({ title: `${p.title} – randy`, url: p.page, image: p.src, alt: p.title, type: 'article' })}
+<body class="art" style="--ar: ${p.size[0]} / ${p.size[1]}">
+<header class="art-sky">
+  <a class="read-home" href="/">${wordmark('sheen')}</a>
+  <figure class="frame${t ? '' : ' finished'}">
+    ${t ? `<video src="${attr(t.src)}" muted playsinline preload="auto" aria-label="${attr(p.title)}, timelapse"></video>
+    ${still}` : still}
+  </figure>
+</header>
+<main class="read">
+  ${t ? `<div class="process">
+    <button class="process-play" type="button" aria-label="Play">${icon('play')}${icon('pause')}</button>
+    <div class="strip" role="slider" tabindex="0" aria-label="Timelapse" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" style="--strip: url('${attr(t.strip)}'); --n: ${t.frames}">
+      ${Array.from({ length: t.frames }, (_, i) => `<span class="cell" style="--i: ${i}"></span>`).join('')}
+      <span class="strip-tip" aria-hidden="true"></span>
+    </div>
+  </div>` : '<span class="buy-none"></span>'}
+  <header class="art-title">
+    <h1>${esc(p.title)}</h1>
+    <p class="byline"><time datetime="${p.date}">${p.longDate}</time>${download(p)}</p>
+  </header>
+  ${p.body ? `<article class="post">
+${markdown(p)}
+  </article>` : ''}
+</main>
+<footer class="foot"><a href="/">randy.gg</a><a href="mailto:contact@randy.gg">contact@randy.gg</a></footer>
+</body>
+</html>
+`;
+}
+
 const posts = load();
 fs.writeFileSync(path.join(OUT, 'index.html'), page(posts));
 fs.rmSync(path.join(OUT, 'posts'), { recursive: true, force: true });
 for (const p of posts.filter(p => p.page)) {
   fs.mkdirSync(path.join(OUT, p.page), { recursive: true });
-  fs.writeFileSync(path.join(OUT, p.page, 'index.html'), postPage(p));
+  fs.writeFileSync(path.join(OUT, p.page, 'index.html'), (p.type === 'art' ? artPage : postPage)(p));
 }
 fs.writeFileSync(path.join(OUT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${['/', ...posts.filter(p => p.page).map(p => p.page)].map(u => `<url><loc>${ORIGIN}${u}</loc></url>`).join('')}</urlset>

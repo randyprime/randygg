@@ -13,14 +13,55 @@ const clock = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(
 // play, quietly when a quick shut cuts it off (the browser rejects that play)
 const start = media => media.play().catch(() => {});
 
-// A hosted piece's viewer. Opening and closing are the popover's own (Esc, a click outside); this plays its timelapse
-// from the start on open and stops it on close.
-function viewer(view) {
-  const video = view.querySelector('video');
-  if (!video) return;
-  view.addEventListener('toggle', e => {
-    if (e.newState === 'open') { video.currentTime = 0; start(video); } else video.pause();
+// An art post's piece and its process. The timelapse plays once in the frame and settles on the finished piece; the
+// filmstrip under it is the scrubber (click or drag, the arrows), lit as far as it has played; the button plays it
+// again. Without motion it opens on the finished piece.
+function art(process) {
+  const frame = document.querySelector('.frame'), video = frame.querySelector('video');
+  const play = process.querySelector('.process-play'), strip = process.querySelector('.strip'), tip = strip.querySelector('.strip-tip');
+  const length = () => video.duration || 0;
+  const paint = t => {
+    if (!length()) return;
+    strip.style.setProperty('--p', `${(100 * t) / length()}%`);
+    strip.setAttribute('aria-valuenow', Math.round(t));
+    strip.setAttribute('aria-valuetext', clock(t));
+  };
+  const finish = done => frame.classList.toggle('finished', done);
+  const seek = t => {
+    video.currentTime = t = Math.min(length(), Math.max(0, t));
+    finish(t >= length() - 0.1);
+    paint(t);
+  };
+  video.addEventListener('loadedmetadata', () => strip.setAttribute('aria-valuemax', Math.round(length())));
+  video.addEventListener('timeupdate', () => paint(video.currentTime));
+  video.addEventListener('play', () => { finish(false); process.classList.add('playing'); play.ariaLabel = 'Pause'; });
+  video.addEventListener('pause', () => { process.classList.remove('playing'); play.ariaLabel = 'Play'; });
+  video.addEventListener('ended', () => { finish(true); paint(length()); });
+  play.addEventListener('click', () => {
+    if (!video.paused) return video.pause();
+    if (video.ended || frame.classList.contains('finished')) video.currentTime = 0;
+    start(video);
   });
+
+  const at = e => {
+    const box = strip.getBoundingClientRect(), x = Math.min(box.width, Math.max(0, e.clientX - box.left));
+    strip.style.setProperty('--at', `${x}px`);
+    tip.textContent = clock((x / box.width) * length());
+    return (x / box.width) * length();
+  };
+  strip.addEventListener('pointerdown', e => { strip.setPointerCapture(e.pointerId); video.pause(); seek(at(e)); });
+  strip.addEventListener('pointermove', e => { const t = at(e); if (strip.hasPointerCapture(e.pointerId)) seek(t); });
+  strip.addEventListener('keydown', e => {
+    const to = { ArrowLeft: -1, ArrowRight: 1, Home: -Infinity, End: Infinity }[e.key];
+    if (to === undefined) return;
+    e.preventDefault();
+    video.pause();
+    seek(video.currentTime + to);
+  });
+
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    video.addEventListener('loadedmetadata', () => seek(length()), { once: true });
+  } else start(video);
 }
 
 // A track's player, the whole screen. It plays on open (the card's click is the gesture that allows sound) and stops on
@@ -98,7 +139,9 @@ function placeAsides(post) {
 
 document.addEventListener('DOMContentLoaded', () => {
   for (const time of document.querySelectorAll('time.when')) time.textContent = ago(time.dateTime);
-  for (const view of document.querySelectorAll('.viewer')) (view.classList.contains('player') ? player : viewer)(view);
+  for (const view of document.querySelectorAll('.player')) player(view);
+  const process = document.querySelector('.process');
+  if (process) art(process);
   const post = document.querySelector('.post');
   if (post?.querySelector('aside')) {
     const place = () => placeAsides(post);

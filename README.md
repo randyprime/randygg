@@ -1,6 +1,6 @@
 # randy.gg
 
-Randy's site, published at https://randy.gg. The home is his link page's header, centred, then a type bar (All, Game, Art, Video, Music) and every post as the live card, filtered by type. Each card goes to the post on Steam or YouTube, to its own page here when it has words (`/posts/NAME/`, with margin notes), or opens a piece hosted here (a painting, a track) fullscreen.
+Randy's site, published at https://randy.gg. The home is his link page's header, centred, then a type bar (All, Game, Art, Video, Music) and every post as the live card, filtered by type. Each card goes to the post on Steam or YouTube, to its own page here (`/posts/NAME/`, with margin notes) when it's art or has words, or opens a track's player fullscreen.
 
 ## Layout
 

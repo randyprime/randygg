@@ -33,7 +33,7 @@ body {
 
 /* low enough to sit easy, high enough that the first row of posts peeks above the fold */
 .landing { padding: clamp(40px, 11vh, 112px) 24px 132px; }
-.landing, .read-sky {
+.landing, .read-sky, .art-sky {
   background:
     radial-gradient(ellipse 44% 34% at 50% 100%, rgba(var(--ember), 0.34), rgba(214, 118, 96, 0.1) 55%, transparent 80%),
     radial-gradient(ellipse 95% 62% at 50% 100%, rgba(104, 86, 150, 0.24), transparent 75%),
@@ -196,41 +196,8 @@ body {
 .to-top { margin-top: 28px; }
 .gallery .capsule-cta { font-size: 0.9rem; padding: 15px; gap: 10px; }
 
-/* ------------------------------------------------------------ the viewer: a hosted piece, fullscreen on dark */
+/* ------------------------------------------------------------ the original, to take: the type bar's chip, on */
 
-/* the popover's own box is just the piece (its timelapse, when it has one) and its bar, so a click on the dark around
-   it closes it */
-.viewer { max-width: none; max-height: none; margin: auto; padding: 0; overflow: visible; color: #e9eef2; background: none; border: 0; }
-/* shut, nothing of it shows: the player's .cover (display: grid) would otherwise beat the browser's own hiding */
-.viewer:not(:popover-open) { display: none; }
-.viewer::backdrop { background: rgba(6, 7, 9, 0.94); }
-.viewer:popover-open {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid rgba(var(--ember), 0.3);
-  border-radius: 6px;
-  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5), 0 0 60px rgba(var(--ember), 0.06);
-}
-.stage { background: #0b0d10; border-radius: 6px 6px 0 0; overflow: hidden; }
-.stage > * { display: block; width: auto; height: auto; max-width: min(calc(100vw - 48px), 1760px); max-height: calc(100svh - 120px); }
-
-/* the card's bar, as wide as the piece */
-.viewer-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 0;
-  min-width: 100%;
-  padding: 12px 14px;
-  background: linear-gradient(110deg, #232c35, #1b222a);
-  border-top: 1px solid rgba(var(--ember), 0.2);
-  border-radius: 0 0 6px 6px;
-  font-size: 0.9rem;
-}
-.viewer-bar > svg { width: 21px; height: 21px; flex-shrink: 0; }
-.viewer-title { flex: 1; min-width: 0; font-weight: 600; letter-spacing: 0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-/* the original, to take: the type bar's chip, on */
 .download {
   display: inline-flex;
   align-items: center;
@@ -273,7 +240,10 @@ svg.cover-logo { width: 62%; }
 
 /* the player: the cover edge to edge, the logo, the waveform that scrubs, and the controls under it */
 html:has(.player:popover-open) { overflow: hidden; }
-.viewer.player:popover-open {
+.player { max-width: none; max-height: none; padding: 0; color: #e9eef2; border: 0; }
+/* shut, nothing of it shows: .cover's display would otherwise beat the browser's own hiding */
+.player:not(:popover-open) { display: none; }
+.player:popover-open {
   --light: hsl(var(--dawn) 96% 80%);
   position: fixed;
   inset: 0;
@@ -281,9 +251,6 @@ html:has(.player:popover-open) { overflow: hidden; }
   height: 100%;
   margin: 0;
   display: grid;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
 }
 .player::backdrop { background: #000; }
 .player-body { display: flex; flex-direction: column; align-items: center; width: min(100% - 48px, 860px); padding: 64px 0 48px; }
@@ -316,13 +283,13 @@ svg.player-logo { width: min(76vw, 560px); }
 @media (hover: hover) { .play:hover { transform: scale(1.05); box-shadow: 0 0 0 8px hsl(var(--dawn) 95% 80% / 0.16), 0 14px 46px hsl(var(--dawn) 90% 50% / 0.4); } }
 .play:active { transform: scale(0.96); }
 .play:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
-.play svg + svg, .viewer.playing .play svg:first-child { display: none; }
-.viewer.playing .play svg + svg { display: block; }
+.play svg + svg, .playing .play svg:first-child, .playing .process-play svg:first-child, .process-play svg + svg { display: none; }
+.playing .play svg + svg, .playing .process-play svg + svg { display: block; }
 .volume { display: flex; align-items: center; gap: 8px; }
 .mute { display: grid; place-items: center; padding: 6px; color: hsl(var(--night) 20% 86%); background: none; border-radius: 3px; cursor: pointer; }
 .mute svg { width: 20px; height: 20px; }
-.mute svg + svg, .viewer.muted .mute svg:first-child { display: none; }
-.viewer.muted .mute svg + svg { display: block; }
+.mute svg + svg, .player.muted .mute svg:first-child { display: none; }
+.player.muted .mute svg + svg { display: block; }
 @media (hover: hover) { .mute:hover { color: #fff; } }
 .mute:focus-visible { outline: 2px solid var(--light); outline-offset: 2px; }
 .range { --p: 100%; width: 96px; height: 16px; margin: 0; background: none; appearance: none; cursor: pointer; }
@@ -405,11 +372,41 @@ svg.player-logo { width: min(76vw, 560px); }
 @media (hover: hover) { .foot a:hover { color: #e9eef2; } }
 .foot a:focus-visible { outline: 2px solid #ffd9b0; outline-offset: 3px; }
 
+/* ------------------------------------------------------------ an art post */
+
+/* the piece stands in the sky in its frame, catching the horizon's light, its timelapse playing there and settling on
+   the finished piece. Its process, the filmstrip, sits on the horizon as the type bar does: the one bold thing, the
+   art's own way through time as the waveform is a track's. Then the title, the original, and his words as a post's. */
+.art { --easel: min(100vw - 48px, 1120px, calc((100svh - 250px) * var(--ar))); }
+.art-sky { padding: 28px 24px 72px; text-align: center; }
+.frame { position: relative; width: var(--easel); margin: clamp(24px, 4vh, 44px) auto 0; padding: 10px; background: #0d0f14; border: 1px solid rgba(var(--ember), 0.3); border-radius: 4px; box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7), 0 40px 90px -40px rgba(var(--ember), 0.4); }
+.frame video, .frame .still { display: block; width: 100%; height: auto; aspect-ratio: var(--ar); background: #0b0d10; border-radius: 2px; }
+.frame video + .still { position: absolute; top: 10px; left: 10px; width: calc(100% - 20px); opacity: 0; transition: opacity 900ms ease; }
+.frame.finished video + .still { opacity: 1; }
+
+.process { display: flex; align-items: center; gap: 10px; width: var(--easel); padding: 6px; background: #0d0f14; border: 1px solid rgba(var(--ember), 0.3); border-radius: 6px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); translate: 0 -50%; }
+.process-play { flex: none; display: grid; place-items: center; width: 38px; height: 38px; padding: 0; color: #0b0d10; background: #ffd9b0; border-radius: 50%; cursor: pointer; transition: transform 160ms ease; }
+.process-play svg { width: 18px; height: 18px; }
+.process-play svg:first-child { margin-left: 2px; }
+@media (hover: hover) { .process-play:hover { transform: scale(1.06); } }
+.process-play:focus-visible { outline: 2px solid #ffd9b0; outline-offset: 3px; }
+.strip { --p: 0%; --at: 0px; position: relative; display: flex; flex: 1; gap: 2px; cursor: pointer; touch-action: none; }
+.cell { flex: 1; aspect-ratio: var(--ar); background: var(--strip) calc(var(--i) * 100% / (var(--n) - 1)) 0 / calc(var(--n) * 100%) 100%; border-radius: 2px; }
+/* what's still to come, dimmed to grey; the playhead, a line of the horizon's light */
+.strip::before { content: ""; position: absolute; inset: 0 0 0 var(--p); background: rgba(13, 15, 20, 0.6); backdrop-filter: grayscale(1); pointer-events: none; }
+.strip::after { content: ""; position: absolute; top: -7px; bottom: -7px; left: var(--p); width: 2px; margin-left: -1px; background: #ffd9b0; border-radius: 1px; box-shadow: 0 0 12px rgba(var(--ember), 0.9); pointer-events: none; }
+.strip-tip { position: absolute; bottom: calc(100% + 12px); left: var(--at); padding: 3px 7px; color: #0b0d10; font-size: 0.75rem; font-variant-numeric: tabular-nums; background: #ffd9b0; border-radius: 3px; transform: translateX(-50%); opacity: 0; transition: opacity 150ms ease; pointer-events: none; }
+@media (hover: hover) { .strip:hover .strip-tip { opacity: 1; } }
+.strip:focus-visible { outline: 2px solid #ffd9b0; outline-offset: 5px; border-radius: 2px; }
+
+.art-title { width: min(100%, var(--column)); margin: 8px 0 44px; text-align: center; }
+.art-title h1 { font-family: var(--serif); font-size: clamp(2rem, 5vw, 2.75rem); font-weight: 600; line-height: 1.15; letter-spacing: -0.012em; text-wrap: balance; }
+.art-title .byline { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 18px; margin-top: 14px; }
+
 @media (max-width: 480px) {
   .landing { padding: 40px 20px 132px; }
   .gallery { padding: 0 20px 48px; }
   .gallery::before { width: calc(100% + 40px); }
-  .stage > * { max-width: calc(100vw - 24px); }
   .player-body { padding-top: 72px; }
   .player-controls { gap: 10px; }
   .range { width: 64px; }
@@ -420,6 +417,12 @@ svg.player-logo { width: min(76vw, 560px); }
   .read::before { width: calc(100% + 40px); }
   .post { font-size: 1.0625rem; line-height: 1.647; /* 17/28 */ }
   .post h2 { font-size: 1.4375rem; }
+  .art { --easel: calc(100vw - 24px); }
+  .art-sky { padding: 24px 12px 56px; }
+  .frame { padding: 6px; }
+  .frame video + .still { top: 6px; left: 6px; width: calc(100% - 12px); }
+  .process-play { width: 34px; height: 34px; }
+  .cell:nth-child(even) { display: none; }
   .capsule-cta { padding: 14px 16px; gap: 10px; font-size: 0.85rem; }
 }
 
@@ -433,6 +436,6 @@ svg.player-logo { width: min(76vw, 560px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .social-link, .capsule-link, .type-bar a, .to-top, .download, .play, .close, .buy, .official { transition: none; }
+  .social-link, .capsule-link, .type-bar a, .to-top, .download, .play, .close, .buy, .official, .process-play, .frame .still { transition: none; }
   .social-link:hover, .social-link:focus-visible, .capsule-link:hover, .capsule-link:focus-visible { transform: none; }
 }
