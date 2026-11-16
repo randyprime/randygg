@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const CONTENT = path.join(ROOT, 'content');
 const OUT = path.join(ROOT, 'site');
-const BIO = 'I’m spending every waking minute of my life figuring out how to design banger games.';
+const BIO = 'me like game dev, art, and music';
 // The type bar after All, in order. Every type shows, an empty one with a quiet note.
 const TYPES = ['Game', 'Art', 'Video', 'Music'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
