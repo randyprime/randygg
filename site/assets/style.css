@@ -168,7 +168,6 @@ body {
 
 /* a screen of its own, so a type brings it to the top; its bar stays put whatever the filter leaves */
 .gallery {
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
