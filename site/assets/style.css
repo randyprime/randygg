@@ -1,4 +1,4 @@
-/* randy.gg: the link page as it has always been, its card his newest post, and the gallery of all of them. */
+/* randy.gg: the link page as it has always been, its card his newest post, and the gallery of all of them by type. */
 
 :root {
   color-scheme: dark;
@@ -144,29 +144,44 @@ body {
 
 .latest { position: relative; width: min(100%, 440px); margin: 28px auto 0; }
 
-/* the ways down to the gallery and back up: small, never competing with a card */
-.show-more, .to-top { padding: 4px 10px; color: #7d858e; font-size: 0.875rem; white-space: nowrap; transition: color 180ms ease; }
-.show-more:focus-visible, .to-top:focus-visible { color: #e9eef2; }
-@media (hover: hover) { .show-more:hover, .to-top:hover { color: #e9eef2; } } /* no hover stuck on after a tap */
-.show-more:focus-visible, .to-top:focus-visible { outline: 2px solid var(--frost); outline-offset: 2px; }
+/* the type bar, the way down to the gallery, and the way back up: small, never competing with a card */
+.type-bar { display: flex; justify-content: center; gap: 2px; }
+.type-bar a, .to-top {
+  padding: 4px 10px;
+  color: #7d858e;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  border-radius: 3px;
+  transition: color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+.type-bar a:focus-visible, .to-top:focus-visible { color: #e9eef2; outline: 2px solid var(--frost); outline-offset: 2px; }
+@media (hover: hover) { .type-bar a:hover, .to-top:hover { color: #e9eef2; } } /* no hover stuck on after a tap */
 /* out of the layout, so the card centres on the profile as live */
-.show-more { position: absolute; top: calc(100% + 12px); left: 50%; transform: translateX(-50%); }
+.latest .type-bar { position: absolute; top: calc(100% + 12px); left: 50%; transform: translateX(-50%); }
 
 /* ------------------------------------------------------------ the gallery: below the fold, every post as that card */
 
-/* a screen of its own, so Show more brings it to the top; centred like the landing until there are enough to fill it */
+/* a screen of its own, so a type brings it to the top; its bar stays put whatever the filter leaves */
 .gallery {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   width: min(100%, 1080px);
   min-height: 100vh;
   min-height: 100svh;
   margin: 0 auto;
   padding: 64px 32px;
 }
-.gallery h2 { margin-bottom: 28px; color: var(--ash); font-size: 0.95rem; font-weight: 600; letter-spacing: 0.01em; text-align: center; }
+.gallery .type-bar { margin-bottom: 28px; }
+/* the type on: the social links' chip. All is on until a type is the page's target. */
+.gallery .type-bar a:has(:target), .gallery .type-bar:not(:has(:target)) a[href="#posts"] {
+  color: #e9eef2;
+  background: rgba(31, 36, 43, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(155, 166, 179, 0.2), inset 0 1px rgba(255, 255, 255, 0.04);
+}
+/* a type's anchor sits in the bar, so lift the scroll to the gallery's own top */
+.gallery .type-bar span { scroll-margin-top: 64px; }
 .gallery-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 320px));
@@ -177,12 +192,14 @@ body {
   list-style: none;
 }
 .gallery-grid li { display: flex; }
+.gallery-grid .empty { display: none; grid-column: 1 / -1; justify-content: center; padding: 48px 0; color: #7d858e; font-size: 0.875rem; }
 .to-top { margin-top: 28px; }
 .gallery .capsule-cta { font-size: 0.9rem; padding: 15px; gap: 10px; }
 
 @media (max-width: 480px) {
   .landing { padding: 28px 20px; }
   .gallery { padding: 48px 20px; }
+  .gallery .type-bar span { scroll-margin-top: 48px; }
   .gallery-grid { grid-template-columns: 1fr; }
   .capsule-cta { padding: 14px 16px; gap: 10px; font-size: 0.85rem; }
 }
@@ -219,6 +236,6 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .social-link, .capsule-link, .show-more, .to-top { transition: none; }
+  .social-link, .capsule-link, .type-bar a, .to-top { transition: none; }
   .social-link:hover, .social-link:focus-visible, .capsule-link:hover, .capsule-link:focus-visible { transform: none; }
 }

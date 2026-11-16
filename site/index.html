@@ -19,6 +19,16 @@
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="/assets/style.css">
+<style>
+.gallery:has(#game:target) .gallery-grid > :not([data-type="game"]) { display: none; }
+.gallery:has(#game:target) .gallery-grid > [data-type="game"] { display: flex; }
+.gallery:has(#art:target) .gallery-grid > :not([data-type="art"]) { display: none; }
+.gallery:has(#art:target) .gallery-grid > [data-type="art"] { display: flex; }
+.gallery:has(#video:target) .gallery-grid > :not([data-type="video"]) { display: none; }
+.gallery:has(#video:target) .gallery-grid > [data-type="video"] { display: flex; }
+.gallery:has(#music:target) .gallery-grid > :not([data-type="music"]) { display: none; }
+.gallery:has(#music:target) .gallery-grid > [data-type="music"] { display: flex; }
+</style>
 <script src="/assets/script.js" defer></script>
 </head>
 <body>
@@ -42,25 +52,31 @@
           <img class="capsule-image" src="/assets/media/steam/open-world-multiplayer.png" alt="">
           <span class="capsule-cta"><svg aria-hidden="true"><use href="/assets/icons.svg#steam"/></svg><span class="cta-text"><span>Open World Multiplayer Update (Experimental)</span><time class="when" datetime="2026-11-01" title="1 November 2026">1 November 2026</time></span><svg class="arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/></svg></span>
         </a>
-        <a class="show-more" href="#posts">Show more</a>
+        <nav class="type-bar" aria-label="Post types">
+          <a href="#posts">All</a><a href="#game">Game</a><a href="#art">Art</a><a href="#video">Video</a><a href="#music">Music</a>
+        </nav>
       </div>
     </div>
   </div>
-  <section class="gallery" id="posts" aria-labelledby="posts-title">
-    <h2 id="posts-title">All posts</h2>
+  <section class="gallery" id="posts" aria-label="Posts">
+    <nav class="type-bar" aria-label="Post types">
+      <a href="#posts">All</a><a href="#game"><span id="game"></span>Game</a><a href="#art"><span id="art"></span>Art</a><a href="#video"><span id="video"></span>Video</a><a href="#music"><span id="music"></span>Music</a>
+    </nav>
     <ul class="gallery-grid">
-      <li><a class="capsule-link" href="https://store.steampowered.com/news/app/3433610/view/1847920302245348">
+      <li data-type="game"><a class="capsule-link" href="https://store.steampowered.com/news/app/3433610/view/1847920302245348">
           <img class="capsule-image" src="/assets/media/steam/open-world-multiplayer.png" alt="" loading="lazy">
           <span class="capsule-cta"><svg aria-hidden="true"><use href="/assets/icons.svg#steam"/></svg><span class="cta-text"><span>Open World Multiplayer Update (Experimental)</span><time class="when" datetime="2026-11-01" title="1 November 2026">1 November 2026</time></span><svg class="arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/></svg></span>
         </a></li>
-      <li><a class="capsule-link" href="https://www.youtube.com/watch?v=RrV937nUKqU">
+      <li data-type="video"><a class="capsule-link" href="https://www.youtube.com/watch?v=RrV937nUKqU">
           <img class="capsule-image" src="/assets/media/video/RrV937nUKqU.jpg" alt="" loading="lazy">
           <span class="capsule-cta"><svg aria-hidden="true"><use href="/assets/icons.svg#youtube"/></svg><span class="cta-text"><span>I spent 500 days making a game about feeding a hole</span><time class="when" datetime="2026-04-27" title="27 April 2026">27 April 2026</time></span><svg class="arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/></svg></span>
         </a></li>
-      <li><a class="capsule-link" href="https://store.steampowered.com/app/3433610/Terrafactor/">
+      <li data-type="game"><a class="capsule-link" href="https://store.steampowered.com/app/3433610/Terrafactor/">
           <img class="capsule-image" src="/assets/media/steam/terrafactor-capsule.webp" alt="" loading="lazy">
           <span class="capsule-cta"><svg aria-hidden="true"><use href="/assets/icons.svg#steam"/></svg><span class="cta-text"><span>Terrafactor Early Access Release</span><time class="when" datetime="2026-04-27" title="27 April 2026">27 April 2026</time></span><svg class="arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/></svg></span>
         </a></li>
+      <li class="empty" data-type="art">Nothing here yet</li>
+      <li class="empty" data-type="music">Nothing here yet</li>
     </ul>
     <a class="to-top" href="#top">Back to top</a>
   </section>

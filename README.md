@@ -1,10 +1,10 @@
 # randy.gg
 
-Randy's site, published at https://randy.gg: one page. It lands on his link page with his newest post in the card's place; below the fold, the gallery holds every post as that card. Each card goes to the post on Steam or YouTube.
+Randy's site, published at https://randy.gg: one page. It lands on his link page with his newest post in the card's place; a type bar (All, Game, Art, Video, Music) under it leads below the fold to the gallery, every post as that card, filtered by type. Each card goes to the post on Steam or YouTube.
 
 ## Layout
 
-- `content/posts/YYYY-MM-DD-slug.md`: a post, front matter only (title, link, thumbnail). `content/media/` holds the thumbnails.
+- `content/posts/YYYY-MM-DD-slug.md`: a post, front matter only (title, type, link, thumbnail). `content/media/` holds the thumbnails.
 - `build.mjs`: one Node script, no dependencies, writes `site/index.html` from the posts. Its output is committed, so Pages runs no build (Oct 2026, supply chain).
 - `site/`: what gets served. Everything but `index.html` and `assets/media/` is hand-kept: `site/assets/` (stylesheet, script, logo, icons), the short-path redirect pages, the sitemap.
 
