@@ -201,6 +201,8 @@ body {
 /* the popover's own box is just the piece (its timelapse, when it has one) and its bar, so a click on the dark around
    it closes it */
 .viewer { max-width: none; max-height: none; margin: auto; padding: 0; overflow: visible; color: #e9eef2; background: none; border: 0; }
+/* shut, nothing of it shows: the player's .cover (display: grid) would otherwise beat the browser's own hiding */
+.viewer:not(:popover-open) { display: none; }
 .viewer::backdrop { background: rgba(6, 7, 9, 0.94); }
 .viewer:popover-open {
   display: flex;

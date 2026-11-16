@@ -10,6 +10,8 @@ const ago = iso => {
 };
 
 const clock = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+// play, quietly when a quick shut cuts it off (the browser rejects that play)
+const start = media => media.play().catch(() => {});
 
 // A hosted piece's viewer. Opening and closing are the popover's own (Esc, a click outside); this plays its timelapse
 // from the start on open and stops it on close.
@@ -17,7 +19,7 @@ function viewer(view) {
   const video = view.querySelector('video');
   if (!video) return;
   view.addEventListener('toggle', e => {
-    if (e.newState === 'open') { video.currentTime = 0; video.play(); } else video.pause();
+    if (e.newState === 'open') { video.currentTime = 0; start(video); } else video.pause();
   });
 }
 
@@ -36,10 +38,10 @@ function player(view) {
     now.textContent = clock(t);
   };
   const seek = t => { audio.currentTime = Math.min(length, Math.max(0, t)); paint(audio.currentTime); };
-  const toggle = () => (audio.paused ? audio.play() : audio.pause());
+  const toggle = () => (audio.paused ? start(audio) : audio.pause());
   const nudge = v => { audio.muted = false; audio.volume = Math.min(1, Math.max(0, Math.round((audio.volume + v) * 10) / 10)); };
 
-  view.addEventListener('toggle', e => (e.newState === 'open' ? audio.play() : audio.pause()));
+  view.addEventListener('toggle', e => (e.newState === 'open' ? start(audio) : audio.pause()));
   play.addEventListener('click', toggle);
   audio.addEventListener('play', () => { view.classList.add('playing'); play.ariaLabel = 'Pause'; });
   audio.addEventListener('pause', () => { view.classList.remove('playing'); play.ariaLabel = 'Play'; });
