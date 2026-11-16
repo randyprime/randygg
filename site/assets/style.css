@@ -33,6 +33,10 @@ body {
 
 /* low enough to sit easy, high enough that the first row of posts peeks above the fold */
 .landing { padding: clamp(40px, 11vh, 112px) 24px 100px; }
+/* the night's stars (script.js draws them), above the sky's paint and under its content; what sits on the horizon
+   is lifted over them (z-index on a flex item: no containing block, so the type bar's anchors keep the page's top) */
+.landing, .read-sky, .art-sky { position: relative; isolation: isolate; }
+.stars { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; }
 .landing, .read-sky, .art-sky {
   background:
     radial-gradient(ellipse 44% 34% at 50% 100%, rgba(var(--ember), 0.34), rgba(214, 118, 96, 0.1) 55%, transparent 80%),
@@ -172,7 +176,7 @@ body {
   background: linear-gradient(90deg, transparent, rgba(var(--ember), 0.55) 28%, #ffd9b0 50%, rgba(var(--ember), 0.55) 72%, transparent);
   box-shadow: 0 0 28px 3px rgba(var(--ember), 0.3);
 }
-.gallery .type-bar { margin: -19px 0 44px; padding: 4px; background: #0d0f14; border: 1px solid rgba(var(--ember), 0.3); border-radius: 6px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+.gallery .type-bar { z-index: 1; margin: -19px 0 44px; padding: 4px; background: #0d0f14; border: 1px solid rgba(var(--ember), 0.3); border-radius: 6px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
 /* the type on, warm. All is on until a type is the page's target. */
 .gallery .type-bar a:has(:target), .gallery .type-bar:not(:has(:target)) a[href="#posts"] {
   color: #ffe6cc;
@@ -317,7 +321,7 @@ svg.player-logo { width: min(76vw, 560px); }
 .byline { margin-top: 14px; color: #b9c0cc; font-size: 0.875rem; }
 .read { display: flex; flex-direction: column; align-items: center; padding: 0 24px; background: linear-gradient(rgba(var(--ember), 0.07), transparent 320px); }
 .read::before { width: calc(100% + 48px); }
-.buy { display: inline-flex; align-items: center; gap: 9px; margin: -20px 0 56px; padding: 8px 12px 8px 14px; color: #ffe6cc; font-size: 0.875rem; font-weight: 600; background: #0d0f14; border: 1px solid rgba(var(--ember), 0.3); border-radius: 6px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); transition: border-color 180ms ease, background 180ms ease; }
+.buy { z-index: 1; display: inline-flex; align-items: center; gap: 9px; margin: -20px 0 56px; padding: 8px 12px 8px 14px; color: #ffe6cc; font-size: 0.875rem; font-weight: 600; background: #0d0f14; border: 1px solid rgba(var(--ember), 0.3); border-radius: 6px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); transition: border-color 180ms ease, background 180ms ease; }
 .buy svg { width: 18px; height: 18px; }
 .buy .arrow, .official .arrow { width: 16px; height: 16px; }
 @media (hover: hover) { .buy:hover { background: #15131a; border-color: rgba(var(--ember), 0.6); } }

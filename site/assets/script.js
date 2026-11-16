@@ -131,6 +131,56 @@ function player(view) {
   audio.play().catch(() => play.focus({ focusVisible: false }));
 }
 
+// The night sky's stars, one small canvas per sky: tiny dots, a few sizes and brightnesses, the same every load (a
+// fixed seed), thinning out before the dawn so none sit in the warm band, a rare one twinkling. They turn about a pole
+// above the page like a long exposure, one turn an hour, drawn at most 30 times a second and only while the sky is
+// on screen (the browser stops it in a hidden tab); with reduced motion they hold still.
+const STARS = (() => {
+  let a = 0x9e3779b9;
+  const r = () => { a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 2 ** 32; };
+  const pole = 1400, reach = 3000, stars = [];
+  for (let i = Math.round((Math.PI * (reach ** 2 - pole ** 2)) / 1500); i--;) {
+    const d = Math.sqrt(pole ** 2 + r() * (reach ** 2 - pole ** 2)), angle = r() * 2 * Math.PI, glow = r();
+    stars.push({ x: d * Math.sin(angle), y: d * Math.cos(angle), size: 0.45 + r() ** 3 * 0.95, glow: 0.3 + glow ** 2 * 0.7,
+      hue: r() < 0.25 ? '205 70% 88%' : r() < 0.1 ? '35 80% 88%' : '0 0% 100%', twinkle: r() < 0.04 ? r() * 6.3 : null });
+  }
+  return { pole, stars };
+})();
+function stars(sky) {
+  const canvas = Object.assign(document.createElement('canvas'), { className: 'stars', ariaHidden: true });
+  sky.prepend(canvas);
+  const g = canvas.getContext('2d'), still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const turn = (2 * Math.PI) / 3600e3, fade = 0.6;
+  let w = 0, h = 0, shown = false, last = -Infinity;
+  const draw = now => {
+    const spin = still ? 0 : now * turn, c = Math.cos(spin), s = Math.sin(spin), cx = w / 2, cy = -STARS.pole;
+    g.clearRect(0, 0, w, h);
+    for (const star of STARS.stars) {
+      const x = cx + star.x * c - star.y * s, y = cy + star.x * s + star.y * c, depth = y / (h * fade);
+      if (x < -2 || x > w + 2 || y < -2 || depth >= 1) continue;
+      let alpha = star.glow * (1 - depth) ** 1.2;
+      if (star.twinkle !== null && !still) alpha *= 0.7 + 0.3 * Math.sin(now / 900 + star.twinkle);
+      g.fillStyle = `hsl(${star.hue} / ${alpha.toFixed(3)})`;
+      g.beginPath();
+      g.arc(x, y, star.size, 0, 2 * Math.PI);
+      g.fill();
+    }
+  };
+  const frame = now => {
+    if (!shown || still) return;
+    if (now - last >= 33) { last = now; draw(now); }
+    requestAnimationFrame(frame);
+  };
+  new ResizeObserver(() => {
+    const dpr = Math.min(2, devicePixelRatio);
+    [w, h] = [sky.clientWidth, sky.clientHeight];
+    [canvas.width, canvas.height] = [Math.round(w * dpr), Math.round(h * dpr)];
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw(performance.now());
+  }).observe(sky);
+  new IntersectionObserver(([e]) => { const was = shown; shown = e.isIntersecting; if (shown && !was) requestAnimationFrame(frame); }).observe(sky);
+}
+
 // A post's margin notes, after Crafting Interpreters' script.js: each <aside data-for="x"> moves level with its
 // <span class="anchor" data-aside="x">, and one that would overlap the note above it slides down instead. Where the
 // margin doesn't fit (style.css's breakpoint) the notes stay after their block.
@@ -149,6 +199,7 @@ function placeAsides(post) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  for (const sky of document.querySelectorAll('.landing, .read-sky, .art-sky, .player')) stars(sky);
   for (const time of document.querySelectorAll('time[datetime]')) ago(time);
   for (const view of document.querySelectorAll('.player')) player(view);
   const process = document.querySelector('.process');
