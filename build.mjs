@@ -6,11 +6,12 @@
 // player.
 // No dependencies; the output is committed, so GitHub Pages runs no build. Run `node build.mjs`.
 //
-// content/posts/YYYY-MM-DD-slug.md  front matter only: title, type (one of TYPES), thumbnail, and either a link out or
-//                                   a file hosted here (art: the original image, a PNG, and optionally its timelapse, with
-//                                   NAME.strip.webp beside it; music: the track, a FLAC, with no thumbnail: its cover is
-//                                   made from its logo, a game's own or else the RANDY wordmark, and its waveform from
-//                                   NAME.peaks.json beside it; tools/encode.sh makes both)
+// content/posts/YYYY-MM-DD-slug.md  front matter only: title, published (when it went live, to the second, with its zone;
+//                                   the name's date is its UTC day), type (one of TYPES), thumbnail, and either a link out or
+//                                   a file hosted here (art: the original image, a PNG, and optionally its timelapse;
+//                                   music: the track, a FLAC, with no thumbnail: its cover is made from its logo, a game's
+//                                   own or else the RANDY wordmark, and its waveform from NAME.peaks.json beside it, by
+//                                   tools/encode.sh)
 //                                   A body under the front matter is his words (see markdown below for what it can hold):
 //                                   an art post's writeup, or else a page at /posts/NAME/ with its link the official post,
 //                                   linked at its foot. game and buy (its store page) put "Buy GAME on Steam" up top.
@@ -34,6 +35,8 @@ const SOCIALS = [
   { icon: 'steam', label: 'Steam', href: 'https://store.steampowered.com/developer/randygg' },
   { icon: 'x', label: 'X', href: 'https://x.com/primalrandy' },
 ];
+// the hero's one call to action, under the links: the game he's making now
+const HERO_BUY = { game: 'Terrafactor', href: 'https://store.steampowered.com/app/3433610/Terrafactor/' };
 
 const fail = msg => { console.error(`build: ${msg}`); process.exit(1); };
 const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -65,33 +68,38 @@ function load() {
     const isArt = data.type === 'art' && data.file;
     if (body && !data.link && !isArt) fail(`posts/${f}: a post with words needs the link to its official post`);
     if (!data.game !== !data.buy) fail(`posts/${f}: game and buy go together`);
+    const published = new Date(data.published);
+    if (!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(Z|[+-]\d\d:\d\d)$/.test(data.published || '') || isNaN(published)) fail(`posts/${f}: published is when it went live, like 2026-11-16T16:21:35Z`);
+    if (published.toISOString().slice(0, 10) !== `${m[1]}-${m[2]}-${m[3]}`) fail(`posts/${f}: its name's date is ${published.toISOString().slice(0, 10)}, published's UTC day`);
     if (!TYPES.some(t => t.toLowerCase() === data.type)) fail(`posts/${f}: type is one of ${TYPES.join(', ').toLowerCase()}`);
     const media = key => mediaFile(f, data[key], key);
     const file = data.file && media('file');
     const peaks = isTrack && file.disk.replace(/\.[^.]+$/, '.peaks.json');
     if (peaks && !fs.existsSync(peaks)) fail(`posts/${f}: no waveform; run tools/encode.sh ${data.file} ${path.basename(peaks)} (paths from content/media)`);
     const timelapse = isArt && data.timelapse && media('timelapse'), size = isArt && imageSize(file.disk);
-    const strip = timelapse && timelapse.disk.replace(/\.[^.]+$/, '.strip.webp');
-    if (strip && !fs.existsSync(strip)) fail(`posts/${f}: no filmstrip; run tools/encode.sh ${data.timelapse} ${path.basename(strip)} (paths from content/media)`);
     return {
-      ...data, slug: f.slice(0, -3), body, page: (body || isArt) && `/posts/${f.slice(11, -3)}/`, date: `${m[1]}-${m[2]}-${m[3]}`, longDate: `${+m[3]} ${MONTHS[m[2] - 1]} ${m[1]}`,
+      ...data, slug: f.slice(0, -3), body, page: (body || isArt) && `/posts/${f.slice(11, -3)}/`, published,
       src: data.thumbnail && media('thumbnail').src, file, size,
-      timelapse: timelapse && { src: timelapse.src, strip: mediaFile(f, path.relative(dir, strip), 'filmstrip').src,
-        frames: (([w, h]) => Math.round(w / (h * size[0] / size[1])))(imageSize(strip)) },
+      timelapse: timelapse && timelapse.src,
       track: isTrack && { seconds: flacSeconds(file.disk), peaks: JSON.parse(fs.readFileSync(peaks, 'utf8')), logo: data.logo && media('logo').src },
     };
   });
   if (!posts.length) fail('no posts');
-  return posts.sort((a, b) => b.date.localeCompare(a.date));
+  return posts.sort((a, b) => b.published - a.published);
 }
 
+// when a post went live: script.js shows how long ago, with the exact time in the reader's own zone on hover; the
+// page as built says the UTC day
+const when = (p, cls = '') => {
+  const d = p.published, utc = `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  return `<time${cls} datetime="${d.toISOString().replace('.000', '')}" title="${utc}, ${d.toISOString().slice(11, 16)} UTC">${utc}</time>`;
+};
 const icon = name => `<svg aria-hidden="true"><use href="/assets/icons.svg#${name}"/></svg>`;
 const ARROW = '<svg class="arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/></svg>';
 const WORDMARK = fs.readFileSync(path.join(OUT, 'assets', 'randy.svg'), 'utf8').match(/ d="([^"]+)"/)[1];
 
 // The live card, a post per card: its image, then one bar with where it came from (Steam, YouTube, or its type when it's
-// hosted here), its title and when it went out, an arrow. script.js turns the date into how long ago, at view time so the
-// committed page never goes stale. A track's card is a button that opens its player.
+// hosted here), its title and how long ago it went out, an arrow. A track's card is a button that opens its player.
 const source = p => p.file ? icon(p.type) : /steampowered|steamcommunity/.test(p.link) ? icon('steam') : /youtube\.com|youtu\.be/.test(p.link) ? icon('youtube') : '';
 const card = (p, lazy) => {
   const [open, close] = p.track ? [`<button class="capsule-link" type="button" popovertarget="view-${p.slug}">`, '</button>'] : [`<a class="capsule-link" href="${attr(p.page || p.link)}">`, '</a>'];
@@ -99,7 +107,7 @@ const card = (p, lazy) => {
     : `<img class="capsule-image" src="${attr(p.src)}" alt=""${lazy ? ' loading="lazy"' : ''}>`;
   return `${open}
           ${image}
-          <span class="capsule-cta">${source(p)}<span class="cta-text"><span>${esc(p.title)}</span><time class="when" datetime="${p.date}" title="${p.longDate}">${p.longDate}</time></span>${ARROW}</span>
+          <span class="capsule-cta">${source(p)}<span class="cta-text"><span>${esc(p.title)}</span>${when(p, ' class="when"')}</span>${ARROW}</span>
         ${close}`;
 };
 
@@ -122,7 +130,6 @@ const sky = slug => {
 const logo = (p, cls) => p.track.logo ? `<img class="${cls}" src="${attr(p.track.logo)}" alt="">`
   : `<svg class="${cls}" viewBox="0 0 2542.126 509.882" aria-hidden="true"><path fill="url(#sheen)" d="${WORDMARK}"/></svg>`;
 
-const slugify = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const clock = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 // a FLAC's length, off its STREAMINFO: total samples over the sample rate
 const flacSeconds = disk => {
@@ -130,20 +137,16 @@ const flacSeconds = disk => {
   if (b.toString('latin1', 0, 4) !== 'fLaC') fail(`${disk}: a track is a FLAC`);
   return ((b[21] & 0x0f) * 2 ** 32 + b.readUInt32BE(22)) / ((b[18] << 12) | (b[19] << 4) | (b[20] >> 4));
 };
-// a PNG's or a WebP's size, off its header
+// a PNG's size, off its header
 const imageSize = disk => {
-  const b = fs.readFileSync(disk).subarray(0, 30);
-  if (b.readUInt32BE(12) === 0x49484452) return [b.readUInt32BE(16), b.readUInt32BE(20)];
-  const kind = b.toString('latin1', 12, 16);
-  if (kind === 'VP8X') return [1 + b.readUIntLE(24, 3), 1 + b.readUIntLE(27, 3)];
-  if (kind === 'VP8L') { const v = b.readUInt32LE(21); return [1 + (v & 0x3fff), 1 + ((v >> 14) & 0x3fff)]; }
-  if (kind === 'VP8 ') return [b.readUInt16LE(26) & 0x3fff, b.readUInt16LE(28) & 0x3fff];
-  fail(`${disk}: not a PNG or a WebP`);
+  const b = fs.readFileSync(disk).subarray(0, 24);
+  if (b.readUInt32BE(12) !== 0x49484452) fail(`${disk}: hosted art and a post's images are PNGs`);
+  return [b.readUInt32BE(16), b.readUInt32BE(20)];
 };
 const download = p => {
   const ext = path.extname(p.file.disk).slice(1);
   const mb = (fs.statSync(p.file.disk).size / 1e6).toFixed(1);
-  return `<a class="download" href="${attr(p.file.src)}" download="${slugify(p.title)}.${ext}">${icon('download')}${ext.toUpperCase()} · ${mb} MB</a>`;
+  return `<a class="download" href="${attr(p.file.src)}" download="${p.slug.slice(11)}.${ext}">${icon('download')}${ext.toUpperCase()} · ${mb} MB</a>`;
 };
 // A track's player: the whole screen its cover, the logo, and under it the waveform that is the scrubber (the bars are
 // its loudness, drawn here; script.js lights what has played), then the time, play, volume and the FLAC. It opens
@@ -221,6 +224,7 @@ ${typeRules}
     <ul class="social-links" aria-label="Find randy online">
 ${socials.join('\n')}
     </ul>
+    ${buy(HERO_BUY.game, HERO_BUY.href, 'buy hero-buy')}
   </div>
   <section class="gallery" id="posts" aria-label="Posts">
     ${typeBar}
@@ -279,17 +283,21 @@ function markdown(p) {
 // A post's own page: its title in the sky, its game to buy sitting on the horizon, then his words on the land, and at
 // their foot the official post.
 const site = url => /steampowered|steamcommunity/.test(url) ? ['steam', 'Steam'] : /youtube\.com|youtu\.be/.test(url) ? ['youtube', 'YouTube'] : null;
+const buy = (game, href, cls = 'buy') => {
+  const store = site(href);
+  return `<a class="${cls}" href="${attr(href)}">${store ? icon(store[0]) : ''}Buy ${esc(game)}${store ? ` on ${store[1]}` : ''}${ARROW}</a>`;
+};
 function postPage(p) {
-  const store = p.buy && site(p.buy), where = site(p.link);
+  const where = site(p.link);
   return `${head({ title: `${p.title} – randy`, url: p.page, image: p.src, alt: p.title, type: 'article' })}
 <body>
 <header class="read-sky">
   <a class="read-home" href="/">${wordmark('sheen')}</a>
   <h1>${esc(p.title)}</h1>
-  <p class="byline"><time datetime="${p.date}">${p.longDate}</time></p>
+  <p class="byline">${when(p)}</p>
 </header>
 <main class="read">
-  ${p.buy ? `<a class="buy" href="${attr(p.buy)}">${store ? icon(store[0]) : ''}Buy ${esc(p.game)}${store ? ` on ${store[1]}` : ''}${ARROW}</a>` : '<span class="buy-none"></span>'}
+  ${p.buy ? buy(p.game, p.buy) : '<span class="buy-none"></span>'}
   <article class="post">
 ${markdown(p)}
   </article>
@@ -302,8 +310,8 @@ ${markdown(p)}
 }
 
 // An art post's page: the piece stands in the sky in its frame, its timelapse playing there once and settling on the
-// finished piece; on the horizon sits its process, a filmstrip of the timelapse that scrubs it (script.js); then the
-// title, the original to download, and his writeup on the land.
+// finished piece; on the horizon sits a quiet scrub bar for it (script.js); then the title, the original to download,
+// and his writeup on the land.
 function artPage(p) {
   const t = p.timelapse, still = `<img class="still" src="${attr(p.src)}" alt="${attr(p.title)}" width="${p.size[0]}" height="${p.size[1]}">`;
   return `${head({ title: `${p.title} – randy`, url: p.page, image: p.src, alt: p.title, type: 'article' })}
@@ -311,21 +319,19 @@ function artPage(p) {
 <header class="art-sky">
   <a class="read-home" href="/">${wordmark('sheen')}</a>
   <figure class="frame${t ? '' : ' finished'}">
-    ${t ? `<video src="${attr(t.src)}" muted playsinline preload="auto" aria-label="${attr(p.title)}, timelapse"></video>
+    ${t ? `<video src="${attr(t)}" muted playsinline preload="auto" aria-label="${attr(p.title)}, timelapse"></video>
     ${still}` : still}
   </figure>
 </header>
 <main class="read">
   ${t ? `<div class="process">
     <button class="process-play" type="button" aria-label="Play">${icon('play')}${icon('pause')}</button>
-    <div class="strip" role="slider" tabindex="0" aria-label="Timelapse" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" style="--strip: url('${attr(t.strip)}'); --n: ${t.frames}">
-      ${Array.from({ length: t.frames }, (_, i) => `<span class="cell" style="--i: ${i}"></span>`).join('')}
-      <span class="strip-tip" aria-hidden="true"></span>
-    </div>
+    <div class="scrub" role="slider" tabindex="0" aria-label="Timelapse" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"><span class="scrub-tip" aria-hidden="true"></span></div>
+    <span class="process-time">0:00</span>
   </div>` : '<span class="buy-none"></span>'}
   <header class="art-title">
     <h1>${esc(p.title)}</h1>
-    <p class="byline"><time datetime="${p.date}">${p.longDate}</time>${download(p)}</p>
+    <p class="byline">${when(p)}${download(p)}</p>
   </header>
   ${p.body ? `<article class="post">
 ${markdown(p)}

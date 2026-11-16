@@ -2,9 +2,8 @@
 # Encodes a post's media for the web, by the output's extension. Nices itself. A track's flac streams as is; it needs
 # only its waveform.
 #   .mp4  a timelapse: H.264 High yuv420p, at most 1920 wide, level 4.2, BT.709 tagged, faststart, silent, a keyframe
-#         every half second so the filmstrip scrubs it smoothly
+#         every half second so it scrubs smoothly
 #   .webp an image for the card and the viewer: at most 2560 wide (the original stays the download)
-#   .strip.webp  a timelapse's filmstrip, beside it (NAME.mp4 -> NAME.strip.webp): 12 frames across it, in a row
 #   .peaks.json  a track's waveform, beside its file (NAME.flac -> NAME.peaks.json): 200 loudness bars, 0 to 1
 # Usage: tools/encode.sh <source> <content/media/...>, then node build.mjs
 set -euo pipefail
@@ -16,9 +15,6 @@ case "$out" in
       -vf "scale='min(1920,iw)':-2:flags=lanczos,format=yuv420p" \
       -c:v libx264 -preset slow -crf 22 -g 15 -maxrate 8M -bufsize 16M -profile:v high -level:v 4.2 \
       -color_primaries bt709 -color_trc bt709 -colorspace bt709 -movflags +faststart "$out" ;;
-  *.strip.webp) dur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$in")
-    nice -n 10 ffmpeg -hide_banner -loglevel error -y -i "$in" -vf "fps=12/$dur,scale=320:-2:flags=lanczos,tile=12x1" \
-      -frames:v 1 -quality 82 "$out" ;;
   *.webp) nice -n 10 convert "$in" -resize '2560x>' -quality 85 -define webp:method=6 "$out" ;;
   *.peaks.json) nice -n 10 ffmpeg -hide_banner -loglevel error -i "$in" -ac 1 -ar 8000 -f s16le - | nice -n 10 node -e '
       const chunks = [];
@@ -32,6 +28,6 @@ case "$out" in
         const top = Math.max(...rms) || 1;
         process.stdout.write(JSON.stringify(rms.map(v => +(v / top).toFixed(3))) + "\n");
       });' > "$out" ;;
-  *) echo "encode: output must be .mp4, .webp, .strip.webp or .peaks.json" >&2; exit 2 ;;
+  *) echo "encode: output must be .mp4, .webp or .peaks.json" >&2; exit 2 ;;
 esac
 ls -l "$out"

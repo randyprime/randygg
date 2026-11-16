@@ -4,7 +4,7 @@ Randy's site, published at https://randy.gg. The home is his link page's header,
 
 ## Layout
 
-- `content/posts/YYYY-MM-DD-slug.md`: a post, front matter only (`build.mjs`'s header lists it). `content/media/` holds the media; `tools/encode.sh` makes a hosted piece's web copies.
+- `content/posts/YYYY-MM-DD-slug.md`: a post (`build.mjs`'s header lists what it holds). `content/media/` holds the media; `tools/encode.sh` makes a hosted piece's web copies.
 - `build.mjs`: one Node script, no dependencies, writes `site/index.html`, the post pages under `site/posts/` and `site/sitemap.xml` from the posts. Its output is committed, so Pages runs no build (Oct 2026, supply chain).
 - `site/`: what gets served. Everything but those and `assets/media/` is hand-kept: `site/assets/` (stylesheet, script, logo, icons, the Literata font), the short-path redirect pages.
 

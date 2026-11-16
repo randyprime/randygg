@@ -1,5 +1,6 @@
 ---
 title: Open World Multiplayer Update (Experimental)
+published: 2026-11-01T16:20:41Z
 type: game
 link: https://store.steampowered.com/news/app/3433610/view/1847920302245348
 game: Terrafactor

@@ -1,11 +1,12 @@
-// How long ago each post went out, worked out at view time so the committed page never goes stale. The date stays
-// in the markup as the fallback and the hover title.
-const ago = iso => {
-  const [y, m, d] = iso.split('-').map(Number), now = new Date();
-  const days = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(y, m - 1, d)) / 864e5);
-  const months = (now.getFullYear() - y) * 12 + now.getMonth() + 1 - m - (now.getDate() < d ? 1 : 0);
+// How long ago each post went out, worked out at view time so the committed page never goes stale; the exact time,
+// in the reader's own zone, on hover.
+const ago = time => {
+  const then = new Date(time.dateTime), now = new Date(), mins = Math.floor((now - then) / 6e4), days = Math.floor(mins / 1440);
+  const months = (now.getFullYear() - then.getFullYear()) * 12 + now.getMonth() - then.getMonth() - (now.getDate() < then.getDate() ? 1 : 0);
   const n = (k, unit) => `${k} ${unit}${k === 1 ? '' : 's'} ago`;
-  return days < 1 ? 'today' : days < 2 ? 'yesterday' : days < 7 ? n(days, 'day') : months < 1 ? n(Math.floor(days / 7), 'week')
+  time.title = then.toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' });
+  time.textContent = mins < 1 ? 'just now' : mins < 60 ? n(mins, 'minute') : mins < 1440 ? n(Math.floor(mins / 60), 'hour')
+    : days < 2 ? 'yesterday' : days < 7 ? n(days, 'day') : months < 1 ? n(Math.floor(days / 7), 'week')
     : months < 12 ? n(months, 'month') : n(Math.floor(months / 12), 'year');
 };
 
@@ -13,18 +14,18 @@ const clock = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(
 // play, quietly when a quick shut cuts it off (the browser rejects that play)
 const start = media => media.play().catch(() => {});
 
-// An art post's piece and its process. The timelapse plays once in the frame and settles on the finished piece; the
-// filmstrip under it is the scrubber (click or drag, the arrows), lit as far as it has played; the button plays it
-// again. Without motion it opens on the finished piece.
+// An art post's piece and its timelapse. It plays once in the frame and settles on the finished piece; the scrub bar
+// under it seeks (click or drag, the arrows), the time under the pointer; the button plays it again. Without motion it
+// opens on the finished piece.
 function art(process) {
-  const frame = document.querySelector('.frame'), video = frame.querySelector('video');
-  const play = process.querySelector('.process-play'), strip = process.querySelector('.strip'), tip = strip.querySelector('.strip-tip');
+  const frame = document.querySelector('.frame'), video = frame.querySelector('video'), play = process.querySelector('.process-play');
+  const scrub = process.querySelector('.scrub'), tip = scrub.querySelector('.scrub-tip'), time = process.querySelector('.process-time');
   const length = () => video.duration || 0;
   const paint = t => {
     if (!length()) return;
-    strip.style.setProperty('--p', `${(100 * t) / length()}%`);
-    strip.setAttribute('aria-valuenow', Math.round(t));
-    strip.setAttribute('aria-valuetext', clock(t));
+    scrub.style.setProperty('--p', `${(100 * t) / length()}%`);
+    scrub.setAttribute('aria-valuenow', Math.round(t));
+    scrub.setAttribute('aria-valuetext', time.textContent = clock(t));
   };
   const finish = done => frame.classList.toggle('finished', done);
   const seek = t => {
@@ -32,26 +33,29 @@ function art(process) {
     finish(t >= length() - 0.1);
     paint(t);
   };
-  video.addEventListener('loadedmetadata', () => strip.setAttribute('aria-valuemax', Math.round(length())));
+  video.addEventListener('loadedmetadata', () => scrub.setAttribute('aria-valuemax', Math.round(length())));
   video.addEventListener('timeupdate', () => paint(video.currentTime));
   video.addEventListener('play', () => { finish(false); process.classList.add('playing'); play.ariaLabel = 'Pause'; });
   video.addEventListener('pause', () => { process.classList.remove('playing'); play.ariaLabel = 'Play'; });
-  video.addEventListener('ended', () => { finish(true); paint(length()); });
+  video.addEventListener('ended', () => { finish(true); paint(length()); scrub.classList.remove('pointing'); });
   play.addEventListener('click', () => {
     if (!video.paused) return video.pause();
     if (video.ended || frame.classList.contains('finished')) video.currentTime = 0;
     start(video);
   });
 
+  // the time under the pointer shows only while it's over the bar (or dragging it)
   const at = e => {
-    const box = strip.getBoundingClientRect(), x = Math.min(box.width, Math.max(0, e.clientX - box.left));
-    strip.style.setProperty('--at', `${x}px`);
+    const box = scrub.getBoundingClientRect(), x = Math.min(box.width, Math.max(0, e.clientX - box.left));
+    scrub.style.setProperty('--at', `${x}px`);
     tip.textContent = clock((x / box.width) * length());
     return (x / box.width) * length();
   };
-  strip.addEventListener('pointerdown', e => { strip.setPointerCapture(e.pointerId); video.pause(); seek(at(e)); });
-  strip.addEventListener('pointermove', e => { const t = at(e); if (strip.hasPointerCapture(e.pointerId)) seek(t); });
-  strip.addEventListener('keydown', e => {
+  scrub.addEventListener('pointerenter', e => e.pointerType === 'mouse' && scrub.classList.add('pointing'));
+  scrub.addEventListener('pointerleave', () => scrub.classList.remove('pointing'));
+  scrub.addEventListener('pointerdown', e => { scrub.setPointerCapture(e.pointerId); video.pause(); seek(at(e)); });
+  scrub.addEventListener('pointermove', e => { const t = at(e); if (scrub.hasPointerCapture(e.pointerId)) seek(t); });
+  scrub.addEventListener('keydown', e => {
     const to = { ArrowLeft: -1, ArrowRight: 1, Home: -Infinity, End: Infinity }[e.key];
     if (to === undefined) return;
     e.preventDefault();
@@ -138,7 +142,7 @@ function placeAsides(post) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  for (const time of document.querySelectorAll('time.when')) time.textContent = ago(time.dateTime);
+  for (const time of document.querySelectorAll('time[datetime]')) ago(time);
   for (const view of document.querySelectorAll('.player')) player(view);
   const process = document.querySelector('.process');
   if (process) art(process);
