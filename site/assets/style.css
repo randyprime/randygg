@@ -1,4 +1,4 @@
-/* randy.gg: the link page as it has always been, its card his newest post, and the gallery of all of them by type. */
+/* randy.gg: the link page's header, centred, and under it the gallery of every post by type. */
 
 :root {
   color-scheme: dark;
@@ -19,7 +19,7 @@ body {
   min-height: 100svh;
   margin: 0;
   color: #e9ecef;
-  /* the live gradient, one screen tall over the landing; the gallery below sits on its last colour */
+  /* the live gradient, one screen tall; the rest of the gallery sits on its last colour */
   background:
     linear-gradient(transparent 72%, #0b0d10),
     radial-gradient(ellipse 72% 44% at 50% -8%, rgba(64, 87, 108, 0.12), transparent 76%),
@@ -30,18 +30,10 @@ body {
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-/* ------------------------------------------------------------ the landing: the link page, as it is live, one screen */
+/* ------------------------------------------------------------ the header: the link page's, centred */
 
-.landing {
-  width: min(100%, 760px);
-  min-height: 100vh;
-  min-height: 100svh;
-  margin: 0 auto;
-  padding: 32px 24px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
+/* low enough to sit easy, high enough that the first row of posts peeks above the fold */
+.landing { width: min(100%, 760px); margin: 0 auto; padding: clamp(40px, 11vh, 112px) 24px 0; }
 
 .hero { text-align: center; }
 
@@ -145,11 +137,7 @@ body {
 .when { color: var(--ash); font-size: 0.9em; font-weight: 400; letter-spacing: 0; }
 .capsule-link:hover .capsule-cta, .capsule-link:focus-visible .capsule-cta { background: linear-gradient(110deg, #303e4a, #252f39); }
 
-/* ------------------------------------------------------------ the newest post, the one key thing on the screen */
-
-.latest { position: relative; width: min(100%, 440px); margin: 28px auto 0; }
-
-/* the type bar, the way down to the gallery, and the way back up: small, never competing with a card */
+/* the type bar and the way back up: small, never competing with a card */
 .type-bar { display: flex; justify-content: center; gap: 2px; }
 .type-bar a, .to-top {
   padding: 4px 10px;
@@ -161,21 +149,16 @@ body {
 }
 .type-bar a:focus-visible, .to-top:focus-visible { color: #e9eef2; outline: 2px solid var(--frost); outline-offset: 2px; }
 @media (hover: hover) { .type-bar a:hover, .to-top:hover { color: #e9eef2; } } /* no hover stuck on after a tap */
-/* out of the layout, so the card centres on the profile as live */
-.latest .type-bar { position: absolute; top: calc(100% + 12px); left: 50%; transform: translateX(-50%); }
 
-/* ------------------------------------------------------------ the gallery: below the fold, every post as that card */
+/* ------------------------------------------------------------ the gallery: every post as that card, under the header */
 
-/* a screen of its own, so a type brings it to the top; its bar stays put whatever the filter leaves */
 .gallery {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: min(100%, 1080px);
-  min-height: 100vh;
-  min-height: 100svh;
   margin: 0 auto;
-  padding: 64px 32px;
+  padding: 36px 32px 64px;
 }
 .gallery .type-bar { margin-bottom: 28px; }
 /* the type on: the social links' chip. All is on until a type is the page's target. */
@@ -184,8 +167,8 @@ body {
   background: rgba(31, 36, 43, 0.7);
   box-shadow: inset 0 0 0 1px rgba(155, 166, 179, 0.2), inset 0 1px rgba(255, 255, 255, 0.04);
 }
-/* a type's anchor sits in the bar, so lift the scroll to the gallery's own top */
-.gallery .type-bar span { scroll-margin-top: 64px; }
+/* a type's anchor, pinned to the page's top: picking a type never scrolls */
+.gallery .type-bar span { position: absolute; top: 0; }
 .gallery-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 320px));
@@ -278,9 +261,8 @@ body {
 .scrub::-moz-range-thumb { width: 10px; height: 10px; background: #e9eef2; border: 0; border-radius: 50%; }
 
 @media (max-width: 480px) {
-  .landing { padding: 28px 20px; }
-  .gallery { padding: 48px 20px; }
-  .gallery .type-bar span { scroll-margin-top: 48px; }
+  .landing { padding: 40px 20px 0; }
+  .gallery { padding: 28px 20px 48px; }
   .stage img { max-width: calc(100vw - 24px); }
   /* the title gets its own row, the controls under it */
   .viewer-bar { flex-wrap: wrap; gap: 10px; }
@@ -292,34 +274,12 @@ body {
 }
 
 @media (max-height: 800px) {
-  .landing { padding-top: 12px; padding-bottom: 12px; }
+  .landing { padding-top: 32px; }
   .profile-photo { width: 80px; height: 80px; }
   .wordmark { margin-top: 14px; font-size: 3.6rem; }
   .bio { margin-top: 8px; font-size: 0.95rem; line-height: 1.5; }
   .social-links { margin-top: 16px; }
   .social-link { width: 44px; height: 44px; }
-  .latest { width: min(100%, 380px); margin-top: 20px; }
-}
-
-@media (min-width: 900px), (min-width: 700px) and (orientation: landscape) {
-  .landing { width: min(100%, 1080px); padding: 32px; }
-  .home-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-    align-items: center;
-    gap: clamp(32px, 5vw, 64px);
-  }
-  .profile-panel { min-width: 0; }
-  .latest { width: 100%; max-width: 460px; margin: 0; justify-self: center; }
-  .bio { max-width: 360px; }
-  .capsule-cta { font-size: 0.9rem; padding: 15px; gap: 10px; }
-}
-
-@media (min-width: 700px) and (max-width: 899px) and (orientation: landscape) {
-  .landing { padding: 20px 24px; }
-  .home-layout { gap: 28px; }
-  .capsule-cta { font-size: 0.8rem; padding: 12px; gap: 8px; }
-  .capsule-cta svg { width: 19px; height: 19px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,12 +1,11 @@
 #!/usr/bin/env node
-// Writes randy.gg's one page, site/index.html: the link page, one screen on landing, with his newest post in the card's
-// place, a type bar under it down to the gallery, and below the fold every post as that card, filterable by type.
+// Writes randy.gg's one page, site/index.html: the link page's header, centred, then the type bar and every post as
+// the live card, filterable by type; the first row peeking above the fold is the cue to scroll.
 // A card goes to the post where it lives (Steam, YouTube), or, for a piece hosted here, opens it in the viewer.
 // No dependencies; the output is committed, so GitHub Pages runs no build. Run `node build.mjs`.
 //
 // content/posts/YYYY-MM-DD-slug.md  front matter only: title, type (one of TYPES), thumbnail, and either a link out or
 //                                   a file hosted here (art: the original image, a timelapse beside it; music: the track)
-// content/featured.txt              the slug of the landing card's post, his pick
 // content/media/                    the posts' media, copied to site/assets/media/
 //
 // Everything else in site/ is hand-kept.
@@ -56,8 +55,7 @@ function load() {
       src: media('thumbnail').src, file: data.file && media('file'), timelapse: data.timelapse && media('timelapse').src,
     };
   });
-  const featured = fs.readFileSync(path.join(CONTENT, 'featured.txt'), 'utf8').trim();
-  posts.featured = posts.find(p => p.slug === featured) || fail(`featured.txt: no post ${featured}`);
+  if (!posts.length) fail('no posts');
   return posts.sort((a, b) => b.date.localeCompare(a.date));
 }
 
@@ -111,17 +109,17 @@ function viewer(p) {
   </div>`;
 }
 
-// All and the types, each a link down to the gallery filtered to it. Pure CSS: the gallery's own bar holds the anchors
-// (spans, so the browser doesn't ring a focused link), and :target marks the type on and filters the grid (the per-type rules are written into the page from TYPES).
-const typeBar = (anchors, pad) => `<nav class="type-bar" aria-label="Post types">
-${pad}  <a href="#posts">All</a>${TYPES.map(t => `<a href="#${t.toLowerCase()}">${anchors ? `<span id="${t.toLowerCase()}"></span>` : ''}${t}</a>`).join('')}
-${pad}</nav>`;
+// All and the types, each filtering the gallery. Pure CSS: each type's link holds its anchor (a span, so the browser
+// doesn't ring a focused link, pinned to the page's top so a click doesn't scroll), and :target marks the type on and
+// filters the grid (the per-type rules are written into the page from TYPES).
+const typeBar = `<nav class="type-bar" aria-label="Post types">
+      <a href="#posts">All</a>${TYPES.map(t => `<a href="#${t.toLowerCase()}"><span id="${t.toLowerCase()}"></span>${t}</a>`).join('')}
+    </nav>`;
 const typeRules = TYPES.map(t => t.toLowerCase()).map(t => `.gallery:has(#${t}:target) .gallery-grid > :not([data-type="${t}"]) { display: none; }
 .gallery:has(#${t}:target) .gallery-grid > [data-type="${t}"] { display: flex; }`).join('\n');
 
-// One key thing on the screen: his featured post. The type bar stays small under it, the way down to the gallery.
 function page(posts) {
-  const socials = SOCIALS.map(s => `        <li><a class="social-link" href="${s.href}" aria-label="${s.label}" title="${s.label}">${icon(s.icon)}</a></li>`);
+  const socials = SOCIALS.map(s => `      <li><a class="social-link" href="${s.href}" aria-label="${s.label}" title="${s.label}">${icon(s.icon)}</a></li>`);
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -151,25 +149,17 @@ ${typeRules}
 <body>
 <main>
   <div class="landing">
-    <div class="home-layout">
-      <div class="profile-panel">
-        <header class="hero">
-          <img src="/profile-picture.webp" alt="randy lifting his sunglasses" width="500" height="500" draggable="false" class="profile-photo">
-          <h1 class="wordmark"><svg viewBox="0 0 2542.126 509.882" role="img" aria-label="randy"><linearGradient id="sheen"><stop offset="0.2" stop-color="#f5f6f7"/><stop offset="0.82" stop-color="#c6d0d8"/></linearGradient><path fill="url(#sheen)" d="${WORDMARK}"/></svg></h1>
-          <p class="bio">${esc(BIO)}</p>
-        </header>
-        <ul class="social-links" aria-label="Find randy online">
+    <header class="hero">
+      <img src="/profile-picture.webp" alt="randy lifting his sunglasses" width="500" height="500" draggable="false" class="profile-photo">
+      <h1 class="wordmark"><svg viewBox="0 0 2542.126 509.882" role="img" aria-label="randy"><linearGradient id="sheen"><stop offset="0.2" stop-color="#f5f6f7"/><stop offset="0.82" stop-color="#c6d0d8"/></linearGradient><path fill="url(#sheen)" d="${WORDMARK}"/></svg></h1>
+      <p class="bio">${esc(BIO)}</p>
+    </header>
+    <ul class="social-links" aria-label="Find randy online">
 ${socials.join('\n')}
-        </ul>
-      </div>
-      <div class="latest">
-        ${card(posts.featured)}
-        ${typeBar(false, '        ')}
-      </div>
-    </div>
+    </ul>
   </div>
   <section class="gallery" id="posts" aria-label="Posts">
-    ${typeBar(true, '    ')}
+    ${typeBar}
     <ul class="gallery-grid">
 ${posts.map(p => `      <li data-type="${p.type}">${card(p, true)}</li>`).join('\n')}
 ${TYPES.map(t => t.toLowerCase()).filter(t => !posts.some(p => p.type === t)).map(t => `      <li class="empty" data-type="${t}">Nothing here yet</li>`).join('\n')}
