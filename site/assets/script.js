@@ -132,33 +132,37 @@ function player(view) {
 }
 
 // The night sky's stars, one small canvas per sky: tiny dots, a few sizes and brightnesses, the same every load (a
-// fixed seed), thinning out before the dawn so none sit in the warm band, a rare one twinkling. They turn about a pole
-// above the page like a long exposure, one turn an hour, drawn at most 30 times a second and only while the sky is
-// on screen (the browser stops it in a hidden tab); with reduced motion they hold still.
+// fixed seed), thinning out before the dawn so none sit in the warm band, a rare one twinkling. They sit on a celestial
+// sphere turning about a pole above the page, seen through a wide lens tipped below it, so each traces a long gentle
+// arc like a star-trail exposure, the same dots-per-pixel on any screen. Drawn at most 30 times a second and only
+// while the sky is on screen (the browser stops it in a hidden tab); with reduced motion they hold still.
 const STARS = (() => {
   let a = 0x9e3779b9;
   const r = () => { a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 2 ** 32; };
-  const pole = 1400, reach = 3000, stars = [];
-  for (let i = Math.round((Math.PI * (reach ** 2 - pole ** 2)) / 1500); i--;) {
-    const d = Math.sqrt(pole ** 2 + r() * (reach ** 2 - pole ** 2)), angle = r() * 2 * Math.PI, glow = r();
-    stars.push({ x: d * Math.sin(angle), y: d * Math.cos(angle), size: 0.45 + r() ** 3 * 0.95, glow: 0.3 + glow ** 2 * 0.7,
+  const tilt = (65 * Math.PI) / 180, reach = Math.cos((100 * Math.PI) / 180), lens = 1600, stars = [];
+  for (let i = Math.round((2 * Math.PI * (1 - reach) * lens ** 2) / 1500); i--;) {
+    const z = 1 - r() * (1 - reach), angle = r() * 2 * Math.PI, d = Math.sqrt(1 - z * z), glow = r();
+    stars.push({ x: d * Math.cos(angle), y: d * Math.sin(angle), z, size: 0.45 + r() ** 3 * 0.95, glow: 0.3 + glow ** 2 * 0.7,
       hue: r() < 0.25 ? '205 70% 88%' : r() < 0.1 ? '35 80% 88%' : '0 0% 100%', twinkle: r() < 0.04 ? r() * 6.3 : null });
   }
-  return { pole, stars };
+  return { up: Math.sin(tilt), out: Math.cos(tilt), lens, stars };
 })();
 function stars(sky) {
   const canvas = Object.assign(document.createElement('canvas'), { className: 'stars', ariaHidden: true });
   sky.prepend(canvas);
   const g = canvas.getContext('2d'), still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const turn = (2 * Math.PI) / 3600e3, fade = 0.6;
+  const turn = (2 * Math.PI) / 3600e3, fade = 0.6, { up, out } = STARS;
   let w = 0, h = 0, shown = false, last = -Infinity;
   const draw = now => {
-    const spin = still ? 0 : now * turn, c = Math.cos(spin), s = Math.sin(spin), cx = w / 2, cy = -STARS.pole;
+    const spin = still ? 0 : now * turn, c = Math.cos(spin), s = Math.sin(spin), cx = w / 2, cy = h / 2;
+    const f = Math.max(w / 2, h * 0.9), count = STARS.stars.length * Math.min(1, (f / STARS.lens) ** 2);
     g.clearRect(0, 0, w, h);
-    for (const star of STARS.stars) {
-      const x = cx + star.x * c - star.y * s, y = cy + star.x * s + star.y * c, depth = y / (h * fade);
-      if (x < -2 || x > w + 2 || y < -2 || depth >= 1) continue;
-      let alpha = star.glow * (1 - depth) ** 1.2;
+    for (let i = 0; i < count; i++) {
+      const star = STARS.stars[i], u = star.x * c - star.y * s, v = star.x * s + star.y * c, depth = star.z * out - v * up;
+      if (depth <= 0.05) continue;
+      const x = cx + (f * u) / depth, y = cy - (f * (star.z * up + v * out)) / depth, low = y / (h * fade);
+      if (x < -2 || x > w + 2 || y < -2 || low >= 1) continue;
+      let alpha = star.glow * (1 - low) ** 1.2;
       if (star.twinkle !== null && !still) alpha *= 0.7 + 0.3 * Math.sin(now / 900 + star.twinkle);
       g.fillStyle = `hsl(${star.hue} / ${alpha.toFixed(3)})`;
       g.beginPath();
