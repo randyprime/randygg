@@ -151,7 +151,7 @@ function stars(sky) {
   const canvas = Object.assign(document.createElement('canvas'), { className: 'stars', ariaHidden: true });
   sky.prepend(canvas);
   const g = canvas.getContext('2d'), still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const turn = (2 * Math.PI) / 480e3, fade = 0.6, { up, out } = STARS;
+  const turn = (2 * Math.PI) / 480e3, fade = 0.85, { up, out } = STARS;
   let w = 0, h = 0, shown = false, last = -Infinity;
   const draw = now => {
     const spin = still ? 0 : now * turn, c = Math.cos(spin), s = Math.sin(spin), cx = w / 2, cy = h / 2;
