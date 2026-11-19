@@ -32,7 +32,8 @@ try {
       const [url, selector, clicks] = pair.slice(i + 1).split('|');
       const page = await ctx.newPage();
       page.on('pageerror', e => console.error(`[${name}] page error: ${e.message}`));
-      await page.goto(url, { waitUntil: 'networkidle' });
+      await page.goto(url, { waitUntil: 'load' });
+      await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {}); // a playing timelapse may never idle
       await page.evaluate(() => document.fonts.ready);
       if (selector) await page.evaluate(sel => {
         const el = document.querySelector(sel);

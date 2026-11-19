@@ -37,7 +37,9 @@ try {
       if (await page.evaluate(() => history.length) !== before + 1) failures.push(`${viewport.width}: Esc on ${track} from its card doesn't go back`);
     }
     for (const href of await page.$$eval('.gallery a[href^="/posts/"]', as => as.map(a => a.getAttribute('href')))) {
-      await page.goto(new URL(href, url).href, { waitUntil: 'networkidle' });
+      // a long timelapse keeps fetching as it plays, so the network may never idle
+      await page.goto(new URL(href, url).href, { waitUntil: 'load' });
+      await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
       if (await page.$('.player')) {
         const [title, name, image, paused, ready] = await page.evaluate(() => [document.title, document.querySelector('.player').ariaLabel,
           document.querySelector('meta[property="og:image"]').content, document.querySelector('audio').paused, document.activeElement.matches('.play')]);
@@ -49,6 +51,7 @@ try {
         continue;
       }
       if (!(await page.$('.process'))) continue;
+      await page.waitForFunction(() => document.querySelector('.frame video').readyState >= 1);
       const box = await page.$eval('.scrub', e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
       await page.mouse.click(...box);
       const t = await page.$eval('.frame video', v => v.currentTime / v.duration);

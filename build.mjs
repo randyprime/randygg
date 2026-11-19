@@ -105,7 +105,7 @@ const WORDMARK = fs.readFileSync(path.join(OUT, 'assets', 'randy.svg'), 'utf8').
 const source = p => p.file ? icon(p.type) : /steampowered|steamcommunity/.test(p.link) ? icon('steam') : /youtube\.com|youtu\.be/.test(p.link) ? icon('youtube') : '';
 const card = (p, lazy) => {
   const image = p.track ? `<span class="capsule-image cover" style="${sky(p.slug)}">${logo(p, 'cover-logo')}</span>`
-    : `<img class="capsule-image" src="${attr(p.src)}" alt=""${lazy ? ' loading="lazy"' : ''}>`;
+    : `<img class="capsule-image${p.size && p.size[1] > p.size[0] ? ' portrait' : ''}" src="${attr(p.src)}" alt=""${lazy ? ' loading="lazy"' : ''}>`;
   return `<a class="capsule-link" href="${attr(p.page || p.link)}">
           ${image}
           <span class="capsule-cta">${source(p)}<span class="cta-text"><span>${esc(p.title)}</span>${when(p, ' class="when"')}</span>${ARROW}</span>

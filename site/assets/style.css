@@ -127,6 +127,8 @@ body {
 .capsule-link:focus-visible, .social-link:focus-visible { outline: 2px solid var(--frost); outline-offset: 4px; }
 
 .capsule-image { width: 100%; height: auto; aspect-ratio: 1232 / 706; object-fit: cover; }
+/* a portrait piece's card keeps the head: its subject sits high, so the crop leans to the top */
+.capsule-image.portrait { object-position: 50% 30%; }
 
 .capsule-cta {
   display: flex;
