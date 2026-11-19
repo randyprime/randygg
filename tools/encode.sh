@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Encodes a post's media for the web, by the output's extension. Nices itself. A track's flac streams as is; it needs
 # only its waveform.
-#   .mp4  a timelapse: H.264 High yuv420p, at most 1920 on its long side, level 4.2 (5.0 for a frame past 4.2's
-#         size), BT.709 tagged, faststart, silent, a keyframe every half second so it scrubs smoothly
+#   .mp4  a timelapse, from his own Make video render as is, preview and end hold included, nothing cut (Nov 19 2026:
+#         "it should be the same as the actual vid I've got myside"): H.264 High yuv420p, at most 1920 on its long side,
+#         level 4.2 (5.0 for a frame past 4.2's size), BT.709 tagged, faststart, silent, a keyframe every half second so
+#         it scrubs smoothly
 #   .webp an image for the card and the viewer: at most 2560 on its long side (the original stays the download)
 #   .peaks.json  a track's waveform, beside its file (NAME.flac -> NAME.peaks.json): 200 loudness bars, 0 to 1
 # Usage: tools/encode.sh <source> <content/media/...>, then node build.mjs
