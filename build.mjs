@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Writes randy.gg: the home, site/index.html (the link page's header, centred, then the type bar and every post as the
-// live card, filterable by type; the first row peeking above the fold is the cue to scroll), a page for each art post
+// Writes randy.gg: the home, site/index.html (the link page's header, centred, then every post as the live card, the
+// first row peeking above the fold as the cue to scroll, and at their foot the type bar filtering them), a page for each art post
 // and each post with words of its own, and the sitemap.
 // A card goes to the post where it lives (Steam, YouTube), or to its page here (art, words, or a track's player).
 // No dependencies; the output is committed, so GitHub Pages runs no build. Run `node build.mjs`.
@@ -181,11 +181,12 @@ function trackPage(p) {
 }
 
 // All and the types, each filtering the gallery. Pure CSS: each type's link holds its anchor (a span, so the browser
-// doesn't ring a focused link, pinned to the page's top so a click doesn't scroll), and :target marks the type on and
-// filters the grid (the per-type rules are written into the page from TYPES).
+// doesn't ring a focused link, pinned to the gallery's top with All's #posts, so a pick from the foot brings up the posts
+// from their start), and :target marks the type on and filters the grid (the per-type rules are written into the page
+// from TYPES).
 const typeBar = `<nav class="type-bar" aria-label="Post types">
-      <a href="#posts">All</a>${TYPES.map(t => `<a href="#${t.toLowerCase()}"><span id="${t.toLowerCase()}"></span>${t}</a>`).join('')}
-    </nav>`;
+        <a href="#posts">All</a>${TYPES.map(t => `<a href="#${t.toLowerCase()}"><span id="${t.toLowerCase()}"></span>${t}</a>`).join('')}
+      </nav>`;
 const typeRules = TYPES.map(t => t.toLowerCase()).map(t => `.gallery:has(#${t}:target) .gallery-grid > :not([data-type="${t}"]) { display: none; }
 .gallery:has(#${t}:target) .gallery-grid > [data-type="${t}"] { display: flex; }`).join('\n');
 
@@ -233,12 +234,14 @@ ${socials.join('\n')}
     ${buy(HERO_BUY.game, HERO_BUY.href, 'buy hero-buy')}
   </div>
   <section class="gallery" id="posts" aria-label="Posts">
-    ${typeBar}
     <ul class="gallery-grid">
 ${posts.map(p => `      <li data-type="${p.type}">${card(p, true)}</li>`).join('\n')}
 ${TYPES.map(t => t.toLowerCase()).filter(t => !posts.some(p => p.type === t)).map(t => `      <li class="empty" data-type="${t}">Nothing here yet</li>`).join('\n')}
     </ul>
-    <a class="to-top" href="#top">Back to top</a>
+    <footer class="gallery-foot">
+      ${typeBar}
+      <a class="to-top" href="#top">Back to top</a>
+    </footer>
   </section>
 </main>
 </body>

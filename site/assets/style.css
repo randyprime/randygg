@@ -1,6 +1,6 @@
 /* randy.gg: the link page's header, centred, and under it the gallery of every post by type; a post with words has a
-   page of its own. The look is Horizon: the header a dawn sky, the posts the land, the type bar sitting on the horizon,
-   a warm glow along that line. */
+   page of its own. The look is Horizon: the header a dawn sky, the posts the land, a warm glow along the horizon,
+   and at the land's foot the same line with the type bar sitting on it. */
 
 @font-face { font-family: "Literata"; src: url("fonts/literata-roman.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
 @font-face { font-family: "Literata"; src: url("fonts/literata-italic.woff2") format("woff2"); font-weight: 400 700; font-style: italic; font-display: swap; }
@@ -34,7 +34,7 @@ body {
 /* low enough to sit easy, high enough that the first row of posts peeks above the fold */
 .landing { padding: clamp(40px, 11vh, 112px) 24px 100px; }
 /* the night's stars (script.js draws them), above the sky's paint and under its content; what sits on the horizon
-   is lifted over them (z-index on a flex item: no containing block, so the type bar's anchors keep the page's top) */
+   is lifted over them (z-index on a flex item, so no containing block) */
 .landing, .read-sky, .art-sky { position: relative; isolation: isolate; }
 .stars { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; }
 .landing, .read-sky, .art-sky {
@@ -165,25 +165,28 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 32px 64px;
+  position: relative;
+  padding: 0 32px;
   background: linear-gradient(rgba(var(--ember), 0.07), transparent 320px);
 }
-/* the horizon, edge to edge, and the type bar sitting on it */
-.gallery::before, .read::before {
+/* the horizon, edge to edge; the gallery's foot is another, the type bar sitting on it and the way back up under it */
+.gallery-foot { display: flex; flex-direction: column; align-items: center; width: calc(100% + 64px); margin-top: 64px; padding-bottom: 64px; background: linear-gradient(rgba(var(--ember), 0.07), transparent 320px); }
+.gallery::before, .read::before, .gallery-foot::before {
   content: "";
   width: calc(100% + 64px);
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(var(--ember), 0.55) 28%, #ffd9b0 50%, rgba(var(--ember), 0.55) 72%, transparent);
   box-shadow: 0 0 28px 3px rgba(var(--ember), 0.3);
 }
-.gallery .type-bar { z-index: 1; margin: -19px 0 44px; padding: 4px; background: #0d0f14; border: 1px solid rgba(var(--ember), 0.3); border-radius: 6px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+.gallery-foot::before { width: 100%; }
+.gallery .type-bar { z-index: 1; margin-top: -19px; padding: 4px; background: #0d0f14; border: 1px solid rgba(var(--ember), 0.3); border-radius: 6px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
 /* the type on, warm. All is on until a type is the page's target. */
 .gallery .type-bar a:has(:target), .gallery .type-bar:not(:has(:target)) a[href="#posts"] {
   color: #ffe6cc;
   background: rgba(var(--ember), 0.14);
   box-shadow: inset 0 0 0 1px rgba(var(--ember), 0.28);
 }
-/* a type's anchor, pinned to the page's top: picking a type never scrolls */
+/* a type's anchor, pinned to the gallery's top where All's lands: a pick brings up the posts from their start */
 .gallery .type-bar span { position: absolute; top: 0; }
 .gallery-grid {
   display: grid;
@@ -192,6 +195,7 @@ body {
   gap: 32px 24px;
   width: 100%;
   max-width: 1080px;
+  margin-top: 64px;
   padding: 0;
   list-style: none;
 }
@@ -420,8 +424,9 @@ svg.player-logo { width: min(76vw, 560px); }
 @media (max-width: 480px) {
   .landing { padding: 40px 20px 92px; }
   .hero-buy { margin-top: 36px; }
-  .gallery { padding: 0 20px 48px; }
-  .gallery::before { width: calc(100% + 40px); }
+  .gallery { padding: 0 20px; }
+  .gallery::before, .gallery-foot { width: calc(100% + 40px); }
+  .gallery-foot { padding-bottom: 48px; }
   .player-body { padding-top: 72px; }
   .player-controls { gap: 10px; }
   .range { width: 64px; }
