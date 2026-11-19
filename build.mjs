@@ -18,6 +18,7 @@
 //
 // Everything else in site/ is hand-kept.
 
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -96,7 +97,10 @@ const when = (p, cls = '') => {
   const d = p.published, utc = `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
   return `<time${cls} datetime="${d.toISOString().replace('.000', '')}" title="${utc}, ${d.toISOString().slice(11, 16)} UTC">${utc}</time>`;
 };
-const icon = name => `<svg aria-hidden="true"><use href="/assets/icons.svg#${name}"/></svg>`;
+// A hand-kept asset's URL carries its content hash: the CDN caches /assets/ for hours, and a page must never meet a stale copy.
+const stamps = {};
+const asset = name => `/assets/${name}?v=${stamps[name] ??= crypto.createHash('sha1').update(fs.readFileSync(path.join(OUT, 'assets', name))).digest('hex').slice(0, 10)}`;
+const icon = name => `<svg aria-hidden="true"><use href="${asset('icons.svg')}#${name}"/></svg>`;
 const ARROW = '<svg class="arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/></svg>';
 const WORDMARK = fs.readFileSync(path.join(OUT, 'assets', 'randy.svg'), 'utf8').match(/ d="([^"]+)"/)[1];
 
@@ -209,8 +213,8 @@ ${description ? `<meta property="og:description" content="${attr(description)}">
 <meta property="og:image:alt" content="${attr(alt)}">
 <meta property="og:type" content="${type}">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="/assets/style.css">${extra}
-<script src="/assets/script.js" defer></script>
+<link rel="stylesheet" href="${asset('style.css')}">${extra}
+<script src="${asset('script.js')}" defer></script>
 </head>`;
 const wordmark = id => `<svg viewBox="0 0 2542.126 509.882" role="img" aria-label="randy"><linearGradient id="${id}"><stop offset="0.2" stop-color="#f5f6f7"/><stop offset="0.82" stop-color="#c6d0d8"/></linearGradient><path fill="url(#${id})" d="${WORDMARK}"/></svg>`;
 
