@@ -14,6 +14,8 @@
 //                                   A body under the front matter is his words (see markdown below for what it can hold):
 //                                   an art post's writeup, or else a page at /posts/NAME/ with its link the official post,
 //                                   linked at its foot. game and buy (its store page) put "Buy GAME on Steam" up top.
+//                                   An art post may carry painted (its painting time as PS Timelapse counted it, like 9h 31m)
+//                                   and parent (the slug of the post it follows on from, pinned at its foot).
 // content/media/                    the posts' media, copied to site/assets/media/ (waveforms stay: they're baked in)
 //
 // Everything else in site/ is hand-kept.
@@ -72,6 +74,7 @@ function load() {
     const published = new Date(data.published);
     if (!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(Z|[+-]\d\d:\d\d)$/.test(data.published || '') || isNaN(published)) fail(`posts/${f}: published is when it went live, like 2026-11-16T16:21:35Z`);
     if (published.toISOString().slice(0, 10) !== `${m[1]}-${m[2]}-${m[3]}`) fail(`posts/${f}: its name's date is ${published.toISOString().slice(0, 10)}, published's UTC day`);
+    if (data.painted && !/^(?=\d)(\d+h)?( ?\d+m)?$/.test(data.painted)) fail(`posts/${f}: painted is like 9h 31m`);
     if (!TYPES.some(t => t.toLowerCase() === data.type)) fail(`posts/${f}: type is one of ${TYPES.join(', ').toLowerCase()}`);
     const media = key => mediaFile(f, data[key], key);
     const file = data.file && media('file');
@@ -88,6 +91,9 @@ function load() {
     };
   });
   if (!posts.length) fail('no posts');
+  for (const p of posts.filter(p => p.parent)) {
+    p.parent = posts.find(q => q.page === `/posts/${p.parent}/`) || fail(`posts/${p.slug}.md: parent ${p.parent} is no post with a page`);
+  }
   return posts.sort((a, b) => b.published - a.published);
 }
 
@@ -323,7 +329,7 @@ ${markdown(p)}
 
 // An art post's page: the piece stands in the sky in its frame, its timelapse playing there once and settling on the
 // finished piece; on the horizon sits a quiet scrub bar for it (script.js); then the title, the original to download,
-// and his writeup on the land.
+// and his writeup on the land; the post it follows on from, as its card, at the foot.
 function artPage(p) {
   const t = p.timelapse, still = `<img class="still" src="${attr(p.src)}" alt="${attr(p.title)}" width="${p.size[0]}" height="${p.size[1]}">`;
   return `${head({ title: `${p.title} – randy`, url: p.page, image: p.src, alt: p.title, type: 'article' })}
@@ -343,11 +349,12 @@ function artPage(p) {
   </div>` : '<span class="buy-none"></span>'}
   <header class="art-title">
     <h1>${esc(p.title)}</h1>
-    <p class="byline">${when(p)}${download(p)}</p>
+    <p class="byline">${when(p)}${p.painted ? `<span>painted in ${esc(p.painted)}</span>` : ''}${download(p)}</p>
   </header>
   ${p.body ? `<article class="post">
 ${markdown(p)}
   </article>` : ''}
+  ${p.parent ? `<nav class="related" aria-label="Previously"><p>Previously</p>${card(p.parent, true)}</nav>` : ''}
 </main>
 <footer class="foot"><a href="/">randy.gg</a><a href="mailto:contact@randy.gg">contact@randy.gg</a></footer>
 </body>

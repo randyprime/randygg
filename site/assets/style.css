@@ -422,6 +422,7 @@ svg.player-logo { width: min(76vw, 560px); }
 .art-title { width: min(100%, var(--column)); margin: 8px 0 44px; text-align: center; }
 .art-title h1 { font-family: var(--serif); font-size: clamp(2rem, 5vw, 2.75rem); font-weight: 600; line-height: 1.15; letter-spacing: -0.012em; text-wrap: balance; }
 .art-title .byline { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 18px; margin-top: 14px; }
+.related { display: flex; flex-direction: column; gap: 14px; width: min(100%, 360px); margin: 16px 0 72px; color: var(--ash); font-size: 0.875rem; text-align: center; }
 
 @media (max-width: 480px) {
   .landing { padding: 40px 20px 92px; }

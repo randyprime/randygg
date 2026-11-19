@@ -5,6 +5,7 @@ type: art
 file: ../media/art/2026-11-16.png
 thumbnail: ../media/art/2026-11-16.webp
 timelapse: ../media/art/2026-11-16-timelapse.mp4
+painted: 4h
 ---
 
 I've been speccing into the art skill tree a bit more recently.
